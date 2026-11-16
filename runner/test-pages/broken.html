@@ -1,0 +1,64 @@
+<!doctype html>
+<!-- 일부러 오류를 넣은 테스트 페이지. test/verify.js가 아래 오류를 모두 잡는지 확인한다. -->
+<!-- [오류] html에 lang 속성 없음 → html-has-lang -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WebOps 테스트 - 오류 페이지</title>
+  <!-- [기능 결함] 없는 디자인 파일 → resource-failed -->
+  <link rel="stylesheet" href="css/missing.css">
+  <!-- [오류] meta description 없음 → SEO meta-description -->
+</head>
+<body>
+  <header>
+    <img src="img/logo.svg" alt="WebOps 테스트" width="120" height="40">
+  </header>
+  <main>
+    <h1>오류가 들어 있는 테스트 페이지</h1>
+
+    <!-- [오류] 없는 이미지 파일 + alt 누락 → image-broken, image-alt -->
+    <img src="img/main-visual.png" width="300" height="120">
+
+    <!-- [오류] alt 누락 (이미지 자체는 정상) → image-alt -->
+    <img src="img/logo.svg" width="120" height="40">
+
+    <!-- [오류] 글자와 배경의 명도 대비 부족 → color-contrast -->
+    <p style="color:#c8c8c8;background:#ffffff">대비가 낮아 읽기 어려운 글자</p>
+
+    <ul>
+      <li><a href="ok.html">정상 링크</a></li>
+      <!-- [오류] 없는 페이지로 가는 링크 → link-broken -->
+      <li><a href="no-such-page.html">깨진 링크</a></li>
+      <li><a href="mailto:test@example.com">메일 링크(검사 제외)</a></li>
+      <!-- [정상] HEAD에만 404를 주는 서버 → 깨진 링크로 잡으면 안 됨 -->
+      <li><a href="head-404.html">HEAD만 404인 정상 링크</a></li>
+    </ul>
+
+    <!-- [직접 확인] 방문 통계 수집용 img (응답은 200, 그림 아님) → 깨진 이미지가 아니라 직접 확인으로 -->
+    <img src="stats/record.do" alt="" width="1" height="1">
+
+    <!-- [오류] 이름 없는 버튼 → button-name -->
+    <button type="button"></button>
+
+    <!-- [오류] 레이블 없는 입력창 → label -->
+    <input type="text">
+  </main>
+
+  <!-- [기능 결함] 휴대폰(360px)보다 넓은 고정 너비 요소 → mobile-horizontal-scroll -->
+  <div id="wide-banner" style="width:800px;height:40px;background:#eef">고정 너비 800px 배너</div>
+
+  <!-- [기능 결함] 없는 기능 스크립트 파일 → resource-failed -->
+  <script src="js/missing-ui.js"></script>
+
+  <script>
+    // [기능 결함] 데이터 요청이 서버 오류(500) → api-failed
+    fetch('api/notice-list.do').catch(() => {});
+    // [기능 결함] 콘솔 오류 메시지 → console-error
+    console.error('공지사항 목록을 그리지 못했습니다 (테스트)');
+  </script>
+
+  <!-- [오류] 정의되지 않은 함수 호출 → js-error -->
+  <script>undefinedFunctionForTest();</script>
+</body>
+</html>

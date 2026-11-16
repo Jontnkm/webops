@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<!-- 모든 화면이 함께 쓰는 조각: <head>, 상단 헤더 -->
+<head th:fragment="head(title)">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${title} + ' | WebOps'">WebOps</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+  <a th:fragment="skip" class="skip-link" href="#main">본문 바로가기</a>
+
+  <header th:fragment="header" class="site-header">
+    <div class="header-inner">
+      <a class="brand" th:href="@{/}">WebOps <span class="brand-tag">가칭</span></a>
+      <span class="header-desc">웹사이트 품질 검사</span>
+    </div>
+  </header>
+</body>
+</html>

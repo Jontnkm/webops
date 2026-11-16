@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('검사 결과')}"></head>
+<body>
+<a th:replace="~{fragments/common :: skip}"></a>
+<!-- 결과 화면 헤더: 왼쪽 로고, 오른쪽 버튼 -->
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" th:href="@{/}">WebOps <span class="brand-tag">가칭</span></a>
+    <span class="header-desc">웹사이트 품질 검사</span>
+    <div class="header-actions">
+      <form th:action="@{/scans}" method="post">
+        <input type="hidden" name="url" th:value="${job.url}">
+        <input type="hidden" name="lighthouse" th:value="${job.lighthouse}">
+        <button type="submit" class="btn">다시 검사</button>
+      </form>
+      <a class="btn" th:href="@{/scans/{id}/report.json(id=${job.id})}" title="개발자용 원본 데이터(JSON)">결과 파일 받기</a>
+      <a class="btn btn-primary" th:href="@{/}">새 검사</a>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="result-layout" th:with="page=${view.page}, summary=${view.report.summary}">
+
+ <!-- ===== 왼쪽: 검사 결과 요약 ~ 로딩 속도 검사 결과 (따로 스크롤) ===== -->
+ <div class="pane pane-left" tabindex="0" aria-label="검사 결과 요약">
+
+  <!-- 검사 대상 · 날짜 · 소요 시간 · 검사 번호를 한 줄로 -->
+  <div class="result-line" th:with="target=${page != null ? page.pageUrl : job.url}">
+    <span class="eyebrow">검사 결과</span>
+    <h1 class="target-url" th:text="${target}" th:title="${target}">https://www.example.com</h1>
+    <span class="result-meta">
+      <span th:text="${#temporals.format(job.createdAt, 'yyyy-MM-dd HH:mm')}">2026-11-16 14:20</span><span class="dot" aria-hidden="true">·</span><span th:text="'소요 ' + ${#numbers.formatDecimal(view.report.durationMs / 1000.0, 1, 1)} + '초'">소요 9.2초</span>
+    </span>
+    <span class="result-id" th:text="'검사 번호 ' + ${job.id}" th:title="'검사 번호 ' + ${job.id}">검사 번호 J-…</span>
+  </div>
+
+  <!-- 요약 숫자 -->
+  <section class="stats" aria-label="검사 요약">
+    <div class="stat">
+      <span class="stat-label">페이지 접속</span>
+      <span class="stat-value" th:classappend="${view.accessOk} ? 'ok' : 'bad'" th:text="${view.accessLabel}">정상</span>
+      <span class="stat-sub" th:if="${page?.httpStatus != null}" th:text="'응답 코드 ' + ${page.httpStatus}">응답 코드 200</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">휴대폰 화면</span>
+      <span class="stat-value" th:classappend="${view.mobileOk} ? 'ok' : 'bad'" th:text="${view.mobileLabel}">정상</span>
+      <span class="stat-sub">가로 360px 기준</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">속도 · 검색 노출</span>
+      <span class="stat-value" th:if="${page?.scores != null}">
+        <span th:text="${page.scores.performance ?: '-'}">90</span><small>·</small><span th:text="${page.scores.seo ?: '-'}">80</span>
+      </span>
+      <span class="stat-value muted" th:unless="${page?.scores != null}">-</span>
+      <span class="stat-sub" th:text="${page?.scores != null} ? '100점 만점' : '측정 안 함'">100점 만점</span>
+    </div>
+    <div class="stat stat-strong">
+      <span class="stat-label">발견된 문제</span>
+      <span class="stat-value"><span th:text="${summary.total}">10</span><small>건</small></span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">직접 확인 필요</span>
+      <span class="stat-value"><span th:text="${summary.manualCheck}">0</span><small>건</small></span>
+    </div>
+  </section>
+
+
+  <!-- 검사 항목별 결과: 문제 있는 항목 / 이상 없는 항목 / 측정 안 한 항목으로 구역을 나눈다 -->
+  <section class="checklist" aria-labelledby="checklist-title">
+    <h2 id="checklist-title">검사 항목별 결과</h2>
+
+    <!-- 문제가 발견된 항목: 누르면 아래 목록에서 그 항목만 보인다 -->
+    <div class="check-zone zone-bad" th:unless="${#lists.isEmpty(view.checksWithIssues)}">
+      <h3 class="zone-title">
+        문제가 발견된 항목 <span class="zone-count" th:text="${#lists.size(view.checksWithIssues)}">4</span>
+        <span class="zone-hint">누르면 아래 목록에서 그 항목만 볼 수 있습니다</span>
+      </h3>
+      <ul class="check-grid">
+        <li th:each="c : ${view.checksWithIssues}">
+          <button type="button" class="check-item is-bad" aria-pressed="false" aria-controls="issue-list"
+                  th:attr="data-filter=${c.code}, data-label=${c.label} + ' 문제'">
+            <span class="check-icon" aria-hidden="true">!</span>
+            <span class="check-body">
+              <span class="check-head">
+                <span class="check-label" th:text="${c.label}">접근성</span>
+                <span class="check-status" th:text="${c.status}">46건</span>
+              </span>
+              <span class="check-what" th:text="${c.what}">설명</span>
+              <span class="check-note" th:text="${c.note ?: ' '}">메모</span>
+            </span>
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 이상 없는 항목: 누를 수 없음 -->
+    <div class="check-zone zone-ok" th:unless="${#lists.isEmpty(view.checksOk)}">
+      <h3 class="zone-title">이상 없는 항목 <span class="zone-count" th:text="${#lists.size(view.checksOk)}">7</span></h3>
+      <ul class="check-grid">
+        <li th:each="c : ${view.checksOk}">
+          <div class="check-item is-ok">
+            <span class="check-icon" aria-hidden="true">✓</span>
+            <span class="check-body">
+              <span class="check-head">
+                <strong class="check-label" th:text="${c.label}">링크</strong>
+                <span class="check-status" th:text="${c.status}">이상 없음</span>
+              </span>
+              <span class="check-what" th:text="${c.what}">설명</span>
+              <span class="check-note" th:text="${c.note ?: ' '}">메모</span>
+            </span>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 측정하지 않은 항목 -->
+    <div class="check-zone zone-skip" th:unless="${#lists.isEmpty(view.checksSkipped)}">
+      <h3 class="zone-title">확인하지 않은 항목 <span class="zone-count" th:text="${#lists.size(view.checksSkipped)}">2</span></h3>
+      <ul class="check-grid">
+        <li th:each="c : ${view.checksSkipped}">
+          <div class="check-item is-skip">
+            <span class="check-icon" aria-hidden="true">–</span>
+            <span class="check-body">
+              <span class="check-head">
+                <strong class="check-label" th:text="${c.label}">로딩 속도</strong>
+                <span class="check-status" th:text="${c.status}">측정 안 함</span>
+              </span>
+              <span class="check-what" th:text="${c.what}">설명</span>
+              <span class="check-note" th:text="${c.note ?: ' '}">메모</span>
+            </span>
+          </div>
+        </li>
+      </ul>
+      <p class="small muted" th:if="${page?.scores == null}">
+        로딩 속도 · 검색 노출은 첫 화면에서 '로딩 속도 · 검색 노출 점수도 측정'을 체크하고 다시 검사하면 볼 수 있습니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- 로딩 속도 검사 결과 (측정했을 때만): 지표별 막대 그래프 + 기준선 -->
+  <section class="perf" th:unless="${#lists.isEmpty(view.metrics)}" aria-labelledby="perf-title">
+    <h2 id="perf-title">로딩 속도 검사 결과 <span class="muted small">PC 화면 기준</span></h2>
+
+    <ul class="perf-legend" aria-label="그래프 보는 법">
+      <li><span class="lg lg-good"></span>좋음</li>
+      <li><span class="lg lg-mid"></span>개선 필요</li>
+      <li><span class="lg lg-bad"></span>나쁨</li>
+      <li><span class="lg lg-marker"></span>이 사이트</li>
+    </ul>
+
+    <div class="metric-list">
+      <div class="metric" th:each="m : ${view.metrics}">
+        <div class="metric-head">
+          <div>
+            <strong class="metric-label" th:text="${m.label}">첫 화면이 보이기까지</strong>
+            <span class="metric-what" th:text="${m.what}">설명</span>
+          </div>
+          <div class="metric-result">
+            <span class="metric-value" th:text="${m.value}">1.3초</span>
+            <span class="rating" th:classappend="${'rating-' + #strings.toLowerCase(m.rating)}" th:text="${m.ratingLabel}">좋음</span>
+          </div>
+        </div>
+        <div class="meter" role="img"
+             th:attr="aria-label=${m.label} + ' ' + ${m.value} + ', 평가 ' + ${m.ratingLabel} + ', 좋음 기준 ' + ${m.goodLabel} + ', 보통 기준 ' + ${m.poorLabel}">
+          <div class="meter-bar" th:style="${m.zoneStyle}"></div>
+          <div class="meter-marker" th:if="${m.valuePct != null}" th:style="${m.valueStyle}">
+            <span class="meter-marker-label" th:text="${m.value}">1.3초</span>
+          </div>
+          <div class="meter-tick" th:style="${m.goodStyle}">
+            <span th:text="'좋음 기준 ' + ${m.goodLabel}">좋음 기준 0.9초</span>
+          </div>
+          <div class="meter-tick tick-poor" th:style="${m.poorStyle}">
+            <span th:text="'보통 기준 ' + ${m.poorLabel}">보통 기준 1.6초</span>
+          </div>
+        </div>
+        <div class="metric-foot">
+          <span class="metric-found" th:unless="${#lists.isEmpty(m.related)}"
+                th:text="'이 페이지에서 찾은 원인 ' + ${#lists.size(m.related)} + '가지'">찾은 원인 2가지</span>
+          <button type="button" class="btn btn-sm" aria-haspopup="dialog"
+                  th:attr="data-open='tpl-m-' + ${m.key}">개선 방법 보기</button>
+        </div>
+
+        <!-- 팝업에 들어갈 내용 (화면에는 보이지 않음) -->
+        <template th:id="'tpl-m-' + ${m.key}">
+          <div class="detail" th:attr="data-title=${m.label} + ' 개선 방법'">
+            <div class="detail-meta">
+              <span class="rating" th:classappend="${'rating-' + #strings.toLowerCase(m.rating)}" th:text="${m.ratingLabel}">좋음</span>
+              <span>현재 <strong th:text="${m.value}">1.3초</strong></span>
+              <span class="muted" th:text="'좋음 기준 ' + ${m.goodLabel} + ' · 보통 기준 ' + ${m.poorLabel}">기준</span>
+            </div>
+            <div class="guide">
+              <div class="guide-row">
+                <p class="guide-label">측정 내용</p>
+                <p th:text="${m.what}">설명</p>
+              </div>
+              <div class="guide-row">
+                <p class="guide-label">현재 상태</p>
+                <p th:text="${m.status}">상태</p>
+              </div>
+              <div class="guide-row guide-fix">
+                <p class="guide-label">해결 방법</p>
+                <ul class="tip-list">
+                  <li th:each="t : ${m.tips}" th:text="${t}">방법</li>
+                </ul>
+              </div>
+            </div>
+            <div class="related" th:unless="${#lists.isEmpty(m.related)}">
+              <p class="guide-label">이 페이지에서 찾은 원인 <span class="muted">누르면 고칠 곳과 추천 개선 방안을 볼 수 있습니다</span></p>
+              <ul class="related-list">
+                <li th:each="r : ${m.related}">
+                  <button type="button" class="related-item" th:attr="data-open='tpl-' + ${r.id}">
+                    <span class="sev-badge" th:classappend="${'sev-' + #strings.toLowerCase(r.severity)}" th:text="${r.severityLabel}">보통</span>
+                    <span class="related-title" th:text="${r.title}">원인</span>
+                    <span class="related-count" th:text="${r.count} + '곳'">2곳</span>
+                    <span aria-hidden="true">›</span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <p class="small muted" th:if="${#lists.isEmpty(m.related)}">
+              이 페이지에서 0.1초 이상 줄일 수 있는 뚜렷한 원인은 찾지 못했습니다. 위의 일반적인 방법을 참고하세요.
+            </p>
+          </div>
+        </template>
+      </div>
+    </div>
+    <p class="small muted perf-note">
+      기준선은 Lighthouse의 PC 평가 기준입니다. 실제 웹사이트 측정 자료(HTTP Archive)를 바탕으로 정해졌으며,
+      '좋음 기준'보다 빠르면 좋음, '보통 기준'보다 느리면 나쁨으로 평가합니다. 평균값이 아니라 평가 기준입니다.
+    </p>
+  </section>
+
+ </div>
+
+ <!-- ===== 오른쪽: 개선 방안 ~ 문제 목록 (따로 스크롤) ===== -->
+ <div class="pane pane-right" id="pane-right" tabindex="0" aria-label="개선 방안과 문제 목록">
+
+  <!-- 심각도 탭 (오른쪽 상단 고정): 누르면 개선 방안과 문제 목록이 그 심각도만 보인다 -->
+  <div class="sev-tabs" role="group" aria-label="심각도별로 보기">
+    <button type="button" class="sev-tab" data-sev="ALL" aria-pressed="true">
+      전체 <strong th:text="${summary.total}">50</strong>
+    </button>
+    <button type="button" class="sev-tab sev-critical" data-sev="CRITICAL" aria-pressed="false"
+            th:disabled="${summary.bySeverity['CRITICAL'] == 0}">
+      심각 <strong th:text="${summary.bySeverity['CRITICAL']}">0</strong>
+    </button>
+    <button type="button" class="sev-tab sev-high" data-sev="HIGH" aria-pressed="false"
+            th:disabled="${summary.bySeverity['HIGH'] == 0}">
+      높음 <strong th:text="${summary.bySeverity['HIGH']}">0</strong>
+    </button>
+    <button type="button" class="sev-tab sev-medium" data-sev="MEDIUM" aria-pressed="false"
+            th:disabled="${summary.bySeverity['MEDIUM'] == 0}">
+      보통 <strong th:text="${summary.bySeverity['MEDIUM']}">0</strong>
+    </button>
+    <button type="button" class="sev-tab sev-low" data-sev="LOW" aria-pressed="false"
+            th:disabled="${summary.bySeverity['LOW'] == 0}">
+      낮음 <strong th:text="${summary.bySeverity['LOW']}">0</strong>
+    </button>
+  </div>
+
+  <!-- 개선 방안: 급한 순서대로 할 일 -->
+  <section class="plan" th:unless="${#lists.isEmpty(view.plan)}" aria-labelledby="plan-title">
+    <h2 id="plan-title">개선 방안 <span class="muted small">급한 순서 · 누르면 원인과 해결 방법이 팝업으로 열림</span></h2>
+    <ol class="plan-list">
+      <li th:each="p : ${view.plan}" class="plan-row" th:attr="data-sev=${p.severity}, data-cat=${p.category}">
+        <button type="button" class="plan-item" aria-haspopup="dialog" th:attr="data-goto=${p.groupId}">
+          <span class="plan-rank" th:text="${p.rank}">1</span>
+          <span class="sev-badge" th:classappend="${'sev-' + #strings.toLowerCase(p.severity)}" th:text="${p.severityLabel}">심각</span>
+          <span class="plan-action" th:text="${p.action}">버튼에 이름 넣기</span>
+          <span class="plan-meta">
+            <span th:text="${p.count} + '곳'">3곳</span> ·
+            <span th:text="${p.categoryLabel}">접근성</span>
+          </span>
+        </button>
+      </li>
+    </ol>
+    <p class="empty small" id="plan-empty" hidden>선택한 조건에 해당하는 개선 방안이 없습니다.</p>
+  </section>
+
+  <!-- 문제 목록 -->
+  <section id="issues" class="issues" aria-labelledby="issues-title">
+    <div class="issues-head">
+      <h2 id="issues-title">
+        <span id="filter-title">전체 문제</span>
+        <span class="muted" id="filter-count" th:text="${view.issueCount} + '건'">10건</span>
+      </h2>
+      <div class="filter-bar" role="group" aria-label="목록 걸러 보기">
+        <button type="button" class="chip" data-filter="ALL" data-label="전체 문제" aria-pressed="true" aria-controls="issue-list">전체 보기</button>
+        <button type="button" class="chip" th:if="${view.manualCount > 0}" data-filter="MANUAL" data-label="직접 확인 필요"
+                aria-pressed="false" aria-controls="issue-list"
+                th:text="'직접 확인 필요 ' + ${view.manualCount} + '건'">직접 확인 필요</button>
+      </div>
+    </div>
+
+    <p class="empty" id="empty-msg" th:hidden="${view.issueCount > 0}">발견된 문제가 없습니다.</p>
+
+    <div class="groups" id="issue-list">
+      <article class="group" th:each="g : ${view.groups}" th:id="${g.id}"
+               th:attr="data-cat=${g.filterCode}, data-sev=${g.severity}, data-count=${g.count}" th:hidden="${g.manual}">
+        <!-- 목록 한 줄: 누르면 팝업으로 상세 내용 -->
+        <button type="button" class="group-row" aria-haspopup="dialog" th:attr="data-open='tpl-' + ${g.id}">
+          <span class="sev-badge" th:classappend="${'sev-' + #strings.toLowerCase(g.severity)}" th:text="${g.severityLabel}">심각</span>
+          <span class="group-cat" th:text="${g.categoryLabel}">접근성</span>
+          <span class="group-title" th:text="${g.title}">이미지에 설명 글(대체 텍스트)이 없음</span>
+          <span class="group-count" th:text="${g.count} + '건'">3건</span>
+          <span class="group-arrow" aria-hidden="true">›</span>
+        </button>
+
+        <!-- 팝업에 들어갈 상세 내용 (화면에는 보이지 않음) -->
+        <template th:id="'tpl-' + ${g.id}">
+        <div class="detail" th:attr="data-title=${g.title}">
+          <div class="detail-meta">
+            <span class="sev-badge" th:classappend="${'sev-' + #strings.toLowerCase(g.severity)}" th:text="${g.severityLabel}">심각</span>
+            <span th:text="${g.categoryLabel}">접근성</span>
+            <span class="muted" th:text="'이 페이지에서 ' + ${g.count} + '곳'">3곳</span>
+          </div>
+          <div class="guide">
+            <div class="guide-row" th:if="${g.why}">
+              <p class="guide-label">원인</p>
+              <p th:text="${g.why}">설명</p>
+            </div>
+            <div class="guide-row guide-fix">
+              <p class="guide-label">해결 방법</p>
+              <p th:text="${g.fix}">고치는 방법</p>
+            </div>
+            <!-- 추천 개선 방안: 고치기 전 | 고친 후 -->
+            <div class="example" th:if="${g.example}">
+              <p class="example-title">추천 개선 방안</p>
+              <div class="example-cols" th:classappend="${g.exampleBefore == null} ? 'single'">
+                <div class="ex-col ex-col-bad" th:if="${g.exampleBefore}">
+                  <p class="ex-label ex-bad">고치기 전</p>
+                  <pre th:text="${g.exampleBefore}">&lt;img src="a.jpg"&gt;</pre>
+                </div>
+                <div class="ex-divider" th:if="${g.exampleBefore}" aria-hidden="true"><span>→</span></div>
+                <div class="ex-col ex-col-good">
+                  <p class="ex-label ex-good" th:text="${g.exampleBefore != null} ? '고친 후' : '예시 코드'">고친 후</p>
+                  <pre th:text="${g.exampleAfter}">&lt;img src="a.jpg" alt="설명"&gt;</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="small muted rule-meta">
+            검사 규칙 <code th:text="${g.ruleId}">image-alt</code>
+            <a th:if="${g.helpUrl}" th:href="${g.helpUrl}" target="_blank" rel="noopener noreferrer">자세한 설명 (영문, 새 창)</a>
+          </p>
+
+          <p class="guide-label">이 페이지에서 발견된 곳</p>
+          <div class="table-wrap">
+            <table class="table items">
+              <thead>
+                <tr>
+                  <th scope="col" class="num">#</th>
+                  <th scope="col">어디에 있나요 <span class="muted">(코드 위치 · 주소)</span></th>
+                  <th scope="col">문제가 된 코드 · 내용</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="f, st : ${g.items}">
+                  <td class="num" th:text="${st.count}">1</td>
+                  <td class="loc">
+                    <code th:if="${f.selector}" th:text="${f.selector}">img</code>
+                    <span th:if="${f.target}" class="target-link" th:text="${f.target}">https://…</span>
+                    <span th:if="${f.selector == null and f.target == null}" class="muted">페이지 전체</span>
+                  </td>
+                  <td>
+                    <pre class="evidence" th:if="${f.evidence}" th:text="${f.evidence}">&lt;img src="…"&gt;</pre>
+                    <p class="item-desc" th:if="${f.source != 'axe-core' and f.description != g.title}" th:text="${f.description}">설명</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        </template>
+      </article>
+    </div>
+  </section>
+
+  <section class="warnings" th:unless="${#lists.isEmpty(view.report.warnings)}">
+    <h2>검사하면서 확인하지 못한 부분</h2>
+    <ul>
+      <li th:each="w : ${view.report.warnings}" th:text="${w}">경고</li>
+    </ul>
+  </section>
+
+  <p class="disclaimer">
+    자동 검사 결과입니다. 웹 접근성 인증이나 법적 기준 충족을 보장하지 않습니다.
+    '직접 확인 필요' 항목은 프로그램이 판단하지 못한 것이므로 화면에서 직접 확인해 주세요.
+    로그인·검색·글쓰기처럼 버튼을 눌러야 하는 기능은 아직 검사하지 않습니다.
+  </p>
+ </div>
+</main>
+
+<!-- 상세 팝업 틀: 열 때마다 복사해서 새 팝업을 만든다 (여러 개를 겹쳐 열 수 있음, 어둡게 가리지 않고 그림자만) -->
+<template id="dialog-shell">
+  <dialog class="detail-dialog">
+    <div class="dialog-head">
+      <h2 class="dialog-title" tabindex="-1">상세</h2>
+      <button type="button" class="dialog-close" aria-label="닫기">×</button>
+    </div>
+    <div class="dialog-body"></div>
+  </dialog>
+</template>
+
+<script>
+  // 항목 카드·필터 버튼을 누르면 아래 문제 목록을 그 분류만 보이게 걸러 준다 (새로고침 없음).
+  (() => {
+    // 걸러 보기 조건 두 가지: 분류(항목 카드·전체/직접 확인 칩) + 심각도(오른쪽 상단 탭)
+    const groups = [...document.querySelectorAll('.group')];
+    const planRows = [...document.querySelectorAll('.plan-row')];
+    const filterButtons = [...document.querySelectorAll('button[data-filter]')];
+    const sevTabs = [...document.querySelectorAll('button[data-sev]')];
+    const titleEl = document.getElementById('filter-title');
+    const countEl = document.getElementById('filter-count');
+    const emptyEl = document.getElementById('empty-msg');
+    const planEmptyEl = document.getElementById('plan-empty');
+    const issuesEl = document.getElementById('issues');
+    const SEV_LABEL = { CRITICAL: '심각', HIGH: '높음', MEDIUM: '보통', LOW: '낮음' };
+    const state = { cat: 'ALL', sev: 'ALL' };
+
+    const catMatch = (cat) => state.cat === 'ALL' ? cat !== 'MANUAL' : cat === state.cat;
+    const sevMatch = (sev) => state.sev === 'ALL' || sev === state.sev;
+
+    function render() {
+      let total = 0;
+      for (const g of groups) {
+        const show = catMatch(g.dataset.cat) && sevMatch(g.dataset.sev);
+        g.hidden = !show;
+        if (show) total += Number(g.dataset.count);
+      }
+      let planShown = 0;
+      for (const p of planRows) {
+        const show = catMatch(p.dataset.cat) && sevMatch(p.dataset.sev);
+        p.hidden = !show;
+        if (show) planShown++;
+      }
+      if (planEmptyEl) planEmptyEl.hidden = planShown > 0 || planRows.length === 0;
+
+      for (const b of filterButtons) b.setAttribute('aria-pressed', String(b.dataset.filter === state.cat));
+      for (const b of sevTabs) b.setAttribute('aria-pressed', String(b.dataset.sev === state.sev));
+
+      const catLabel = filterButtons.find((b) => b.dataset.filter === state.cat)?.dataset.label ?? '전체 문제';
+      titleEl.textContent = state.sev === 'ALL' ? catLabel : catLabel + ' · ' + SEV_LABEL[state.sev];
+      countEl.textContent = total + '건';
+      emptyEl.hidden = total > 0;
+    }
+
+    // 분류에 맞게 목록을 바꾼다 (외부에서도 쓰므로 함수로)
+    function apply(cat) {
+      state.cat = cat;
+      render();
+    }
+
+    for (const b of filterButtons) {
+      b.addEventListener('click', () => {
+        // 이미 선택된 항목을 다시 누르면 전체 목록으로 돌아간다
+        const again = b.dataset.filter !== 'ALL' && b.getAttribute('aria-pressed') === 'true';
+        apply(again ? 'ALL' : b.dataset.filter);
+        if (b.classList.contains('check-item')) issuesEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+
+    for (const b of sevTabs) {
+      b.addEventListener('click', () => {
+        const again = b.dataset.sev !== 'ALL' && b.getAttribute('aria-pressed') === 'true';
+        state.sev = again ? 'ALL' : b.dataset.sev;
+        render();
+      });
+    }
+
+    // ---------- 상세 팝업 (여러 개를 겹쳐 열 수 있음) ----------
+    // - 누른 버튼이 있는 영역(왼쪽/오른쪽)의 가운데에 뜬다. 팝업 안에서 누르면 그 팝업과 같은 쪽에 뜬다.
+    // - 새 팝업은 이전 팝업 위에 조금 비켜서 겹쳐 뜨고, 이전 팝업은 그대로 남는다.
+    // - 왼쪽·오른쪽 팝업은 서로 영향을 주지 않으며, 닫기는 각 팝업의 × 버튼으로만 한다.
+    // - 이미 열려 있는 내용을 다시 누르면 새로 만들지 않고 그 팝업을 맨 앞으로 가져온다.
+    const shell = document.getElementById('dialog-shell');
+    const rightPane = document.getElementById('pane-right');
+    const openPopups = [];   // { el, key, pane, opener }
+    let zTop = 100;
+    let seq = 0;
+    const STEP = 28;         // 겹쳐 뜰 때 비켜나는 거리(px)
+
+    function paneRect(pane) {
+      const twoPanes = getComputedStyle(pane).overflowY === 'auto';
+      return twoPanes
+        ? pane.getBoundingClientRect()
+        : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+    }
+
+    function place(p) {
+      const r = paneRect(p.pane);
+      const sameSide = openPopups.filter((o) => o.pane === p.pane);
+      const n = sameSide.length;
+      const i = sameSide.indexOf(p);
+      // 같은 쪽 팝업들이 계단처럼 보이도록 가운데를 기준으로 비켜 놓는다
+      const offset = (i - (n - 1) / 2) * STEP;
+      const room = (n - 1) * STEP;
+      p.el.style.left = (r.left + r.width / 2 + offset) + 'px';
+      p.el.style.top = (r.top + r.height / 2 + offset) + 'px';
+      p.el.style.width = Math.max(280, Math.min(r.width - 32 - room, 760)) + 'px';
+      p.el.style.maxHeight = Math.max(240, r.height - 32 - room) + 'px';
+    }
+
+    const placeAll = () => openPopups.forEach(place);
+
+    function bringToFront(p) {
+      p.el.style.zIndex = String(++zTop);
+      for (const o of openPopups) o.el.classList.toggle('is-front', o === p);
+    }
+
+    function openDetail(templateId, from) {
+      const tpl = document.getElementById(templateId);
+      if (!tpl) return;
+
+      const parent = from?.closest('dialog');
+      const parentPopup = parent ? openPopups.find((o) => o.el === parent) : null;
+      const pane = parentPopup?.pane ?? from?.closest('.pane') ?? rightPane;
+
+      // 같은 쪽에 같은 내용이 이미 열려 있으면 새로 만들지 않고 맨 앞으로 (왼쪽·오른쪽은 따로 센다)
+      const already = openPopups.find((o) => o.key === templateId && o.pane === pane);
+      if (already) {
+        bringToFront(already);
+        already.el.querySelector('.dialog-title').focus();
+        return;
+      }
+
+      const el = shell.content.firstElementChild.cloneNode(true);
+      const content = tpl.content.cloneNode(true);
+      const title = el.querySelector('.dialog-title');
+      title.id = 'dialog-title-' + (++seq);
+      title.textContent = content.firstElementChild?.dataset.title ?? '상세';
+      el.setAttribute('aria-labelledby', title.id);
+      el.querySelector('.dialog-body').append(content);
+      document.body.append(el);
+
+      const p = { el, key: templateId, pane, opener: from };
+      openPopups.push(p);
+      el.show();
+      bringToFront(p);
+      placeAll();
+      title.focus();
+
+      el.addEventListener('pointerdown', () => bringToFront(p));
+      el.addEventListener('focusin', () => bringToFront(p));
+      el.querySelector('.dialog-close').addEventListener('click', () => closePopup(p));
+    }
+
+    function closePopup(p) {
+      const i = openPopups.indexOf(p);
+      if (i < 0) return;
+      openPopups.splice(i, 1);
+      p.el.close();
+      p.el.remove();
+      placeAll();
+      // 초점: 이 팝업을 열었던 버튼으로, 그 버튼이 없으면 남은 팝업 중 맨 앞으로
+      if (p.opener?.isConnected) {
+        p.opener.focus({ preventScroll: true });
+      } else if (openPopups.length) {
+        const front = openPopups.reduce((a, b) => (Number(a.el.style.zIndex) > Number(b.el.style.zIndex) ? a : b));
+        bringToFront(front);
+        front.el.querySelector('.dialog-title').focus();
+      }
+    }
+
+    // data-open이 붙은 버튼(목록 줄, 속도 '개선 방법 보기', 팝업 안 '찾은 원인')은 팝업을 연다
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-open]');
+      if (b) openDetail(b.dataset.open, b);
+    });
+    window.addEventListener('resize', placeAll);
+
+    // 개선 방안 항목: 목록을 그 분류로 걸러 위치를 보여 주고, 상세 팝업을 연다
+    for (const b of document.querySelectorAll('[data-goto]')) {
+      b.addEventListener('click', () => {
+        const g = document.getElementById(b.dataset.goto);
+        if (!g) return;
+        state.cat = g.dataset.cat;
+        if (!sevMatch(g.dataset.sev)) state.sev = 'ALL';
+        render();
+        g.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        openDetail('tpl-' + g.id, b);
+      });
+    }
+  })();
+</script>
+</body>
+</html>

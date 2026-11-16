@@ -1,0 +1,10 @@
+{
+  "name": "webops",
+  "private": true,
+  "description": "AI WebOps(가칭) - WebOps 폴더에서 바로 실행할 수 있는 명령 모음",
+  "scripts": {
+    "scan": "node runner/src/scan.js",
+    "verify": "node runner/test/verify.js",
+    "serve:test": "node runner/test-pages/server.js"
+  }
+}

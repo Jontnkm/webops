@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(${job.finished} ? '검사 실패' : '검사 중')}"></head>
+<body>
+<a th:replace="~{fragments/common :: skip}"></a>
+<header th:replace="~{fragments/common :: header}"></header>
+
+<main id="main" class="container narrow">
+  <!-- 진행 중 -->
+  <section class="card progress-card" th:unless="${job.finished}">
+    <div class="spinner" aria-hidden="true"></div>
+    <h1>검사 중입니다</h1>
+    <p class="target" th:text="${job.url}">https://www.example.com</p>
+    <p class="progress-text" role="status" aria-live="polite">
+      <span id="progress" th:text="${job.progress}">페이지 여는 중</span>
+    </p>
+    <p class="muted small" th:if="${job.lighthouse}">로딩 속도 · 검색 노출 측정을 포함해 1분 정도 걸릴 수 있습니다.</p>
+    <p class="muted small" th:unless="${job.lighthouse}">보통 10~20초 걸립니다. PC 화면과 휴대폰 화면을 차례로 확인합니다.</p>
+  </section>
+
+  <!-- 실패 -->
+  <section class="card" th:if="${job.status.name() == 'FAILED'}">
+    <h1>검사에 실패했습니다</h1>
+    <p class="target" th:text="${job.url}">https://www.example.com</p>
+    <p class="form-error" th:text="${job.error}">오류 내용</p>
+    <a class="btn btn-primary" th:href="@{/}">처음으로</a>
+  </section>
+</main>
+
+<script th:unless="${job.finished}" th:inline="javascript">
+  // 1.5초마다 진행 상태를 확인하고, 끝나면 새로고침해서 결과 화면을 연다.
+  const statusUrl = /*[[@{/api/scans/{id}(id=${job.id})}]]*/ '';
+  const progressEl = document.getElementById('progress');
+  async function poll() {
+    try {
+      const res = await fetch(statusUrl, { cache: 'no-store' });
+      const s = await res.json();
+      progressEl.textContent = s.progress;
+      if (s.finished) { location.reload(); return; }
+    } catch (e) { /* 잠깐 끊겨도 다시 시도 */ }
+    setTimeout(poll, 1500);
+  }
+  setTimeout(poll, 1000);
+</script>
+</body>
+</html>
