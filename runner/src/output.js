@@ -30,6 +30,13 @@ export function printSummary(report, { limit = 15 } = {}) {
   console.log('');
   const access = page.httpStatus == null ? '접속 안 됨' : page.httpStatus < 400 ? '정상' : `오류(${page.httpStatus})`;
   console.log(`검사 완료: ${page.pageUrl}  (접속 ${access}, ${sec}초)`);
+  if (report.pages.length > 1) {
+    console.log(`사이트 전체 검사: 페이지 ${report.pages.length}개`);
+    for (const p of report.pages) {
+      const b = p.summary.bySeverity;
+      console.log(`  ${p.pageUrl}  (심각 ${b.CRITICAL} · 높음 ${b.HIGH} · 보통 ${b.MEDIUM} · 낮음 ${b.LOW})`);
+    }
+  }
   if (page.scores) console.log(`로딩 속도 ${page.scores.performance ?? '-'} · 검색 노출 ${page.scores.seo ?? '-'}  (100점 만점)`);
 
   const s = report.summary;

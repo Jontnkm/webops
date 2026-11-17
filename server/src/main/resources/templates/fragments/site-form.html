@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  정기 검사 대상 등록·수정 입력 칸 (sites.html 등록, site.html 설정 바꾸기에서 함께 씀)
+  넘겨받는 값: f (이름·주소·범위 등, 등록 화면 처음에는 null), maxPages, editing(수정 화면이면 true)
+-->
+<div th:fragment="fields(f, maxPages, editing)" class="site-fields"
+     th:with="sched=${f != null ? f.scheduleValue : 'DAILY'}, scopeSel=${f != null ? f.scopeValue : 'MAIN'}, hourSel=${f != null ? f.hourValue : 9}, dowSel=${f != null ? f.dowValue : 1}">
+  <div class="field-row">
+    <div class="field">
+      <label th:for="${editing} ? 'e-url' : 'n-url'" class="form-label">검사할 주소 <span class="req">(필수)</span></label>
+      <input th:id="${editing} ? 'e-url' : 'n-url'" name="url" type="text" inputmode="url" required placeholder="https://www.example.com"
+             th:value="${f != null ? f.urlValue : ''}">
+    </div>
+    <div class="field">
+      <label th:for="${editing} ? 'e-name' : 'n-name'" class="form-label">이름 <span class="muted">(선택)</span></label>
+      <input th:id="${editing} ? 'e-name' : 'n-name'" name="name" type="text" maxlength="200" placeholder="예: 기관 대표 홈페이지"
+             th:value="${f != null ? f.nameValue : ''}">
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label th:for="${editing} ? 'e-scope' : 'n-scope'" class="form-label">검사 범위</label>
+      <select th:id="${editing} ? 'e-scope' : 'n-scope'" name="scope">
+        <option value="MAIN" th:selected="${scopeSel == 'MAIN'}">메인 페이지만</option>
+        <option value="PAGE" th:selected="${scopeSel == 'PAGE'}">입력한 현재 페이지</option>
+        <option value="SITE" th:selected="${scopeSel == 'SITE'}" th:text="'웹사이트 전체 점검 (최대 ' + ${maxPages} + '페이지)'">웹사이트 전체 점검</option>
+      </select>
+      <!-- 상세 옵션: 웹사이트 전체 점검일 때 게시판 글을 모두 볼지 -->
+      <label class="sub-field">
+        <span class="sub-label">게시판 글 <span class="muted">(웹사이트 전체 점검에만)</span></span>
+        <select name="posts">
+          <option value="LATEST" th:selected="${f == null or !f.allPostsValue}">최신 게시물 1개만 (기본)</option>
+          <option value="ALL" th:selected="${f != null and f.allPostsValue}">모든 게시물</option>
+        </select>
+      </label>
+    </div>
+    <fieldset class="field schedule-field">
+      <legend class="form-label">정기 검사</legend>
+      <div class="schedule-row">
+        <select name="schedule" class="js-schedule" aria-label="검사 주기">
+          <option value="DAILY" th:selected="${sched == 'DAILY'}">매일</option>
+          <option value="WEEKLY" th:selected="${sched == 'WEEKLY'}">매주</option>
+          <option value="NONE" th:if="${editing}" th:selected="${sched == 'NONE'}">정기 검사 안 함</option>
+        </select>
+        <select name="dow" class="js-dow" aria-label="요일 (매주일 때)">
+          <option th:each="d, st : ${ {'월','화','수','목','금','토','일'} }" th:value="${st.count}" th:selected="${dowSel == st.count}" th:text="${d} + '요일'">월요일</option>
+        </select>
+        <select name="hour" aria-label="시각">
+          <option th:each="h : ${#numbers.sequence(0, 23)}" th:value="${h}" th:selected="${hourSel == h}" th:text="${h} + '시'">9시</option>
+        </select>
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="field">
+    <label th:for="${editing} ? 'e-email' : 'n-email'" class="form-label">알림 받을 메일 <span class="muted">(선택 · 여러 명이면 쉼표로)</span></label>
+    <input th:id="${editing} ? 'e-email' : 'n-email'" name="email" type="text" inputmode="email" placeholder="담당자@기관.go.kr"
+           th:value="${f != null ? f.emailValue : ''}" th:attr="aria-describedby=${editing} ? 'e-email-help' : 'n-email-help'">
+    <p class="help" th:id="${editing} ? 'e-email-help' : 'n-email-help'">사이트에 접속할 수 없거나, 지난 검사에 없던 깨진 링크가 생기면 메일로 알려 드립니다.</p>
+  </div>
+
+  <label class="check">
+    <input type="checkbox" name="lighthouse" value="true" th:checked="${f != null and f.lighthouseValue}">
+    <span>로딩 속도 · 검색 노출 점수도 측정 <span class="muted">(첫 페이지만 · 20~60초 더 걸림)</span></span>
+  </label>
+  <label class="check" th:unless="${editing}">
+    <input type="checkbox" name="runNow" value="true" checked>
+    <span>등록하고 바로 첫 검사 <span class="muted">(앞으로 비교 · 추이 그래프의 기준이 됩니다)</span></span>
+  </label>
+</div>
+
+<!-- 매주가 아닐 때는 요일 칸을 숨긴다 -->
+<script th:fragment="script">
+  for (const sel of document.querySelectorAll('.js-schedule')) {
+    const dow = sel.closest('.schedule-row').querySelector('.js-dow');
+    const sync = () => { dow.hidden = sel.value !== 'WEEKLY'; };
+    sel.addEventListener('change', sync);
+    sync();
+  }
+</script>
+</body>
+</html>

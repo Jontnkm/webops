@@ -12,9 +12,13 @@
       <form th:action="@{/scans}" method="post">
         <input type="hidden" name="url" th:value="${job.url}">
         <input type="hidden" name="lighthouse" th:value="${job.lighthouse}">
+        <input type="hidden" name="scope" th:value="${job.scope.code}">
+        <input type="hidden" name="posts" th:value="${job.allPosts} ? 'ALL' : 'LATEST'">
         <button type="submit" class="btn">다시 검사</button>
       </form>
-      <a class="btn" th:href="@{/scans/{id}/report.json(id=${job.id})}" title="개발자용 원본 데이터(JSON)">결과 파일 받기</a>
+      <a class="btn" id="pdf-btn" th:href="@{/scans/{id}/report.pdf(id=${job.id})}"
+         title="결과를 인쇄용으로 정리한 PDF 보고서 (A4)">PDF 보고서</a>
+      <a class="btn" th:href="@{/scans/{id}/report.json(id=${job.id})}" title="개발자용 원본 데이터(JSON)">결과 파일</a>
       <a class="btn btn-primary" th:href="@{/}">새 검사</a>
     </div>
   </div>
@@ -30,17 +34,29 @@
     <span class="eyebrow">검사 결과</span>
     <h1 class="target-url" th:text="${target}" th:title="${target}">https://www.example.com</h1>
     <span class="result-meta">
+      <th:block th:if="${view.multiPage}"><span th:text="'사이트 ' + ${#lists.size(view.pages)} + '페이지'">사이트 20페이지</span><span class="dot" aria-hidden="true">·</span></th:block>
       <span th:text="${#temporals.format(job.createdAt, 'yyyy-MM-dd HH:mm')}">2026-11-16 14:20</span><span class="dot" aria-hidden="true">·</span><span th:text="'소요 ' + ${#numbers.formatDecimal(view.report.durationMs / 1000.0, 1, 1)} + '초'">소요 9.2초</span>
     </span>
     <span class="result-id" th:text="'검사 번호 ' + ${job.id}" th:title="'검사 번호 ' + ${job.id}">검사 번호 J-…</span>
   </div>
+  <!-- 정기 검사 대상 사이트의 검사면: 품질 추이로 가는 길 -->
+  <p class="site-link" th:if="${site != null}">
+    <span class="tag-scheduled" th:text="${job.scheduled} ? '정기 검사' : '사이트 검사'">정기 검사</span>
+    <a th:href="@{/sites/{id}(id=${site.siteId})}" th:text="${site.name} + ' 품질 추이 보기 ›'">사이트 품질 추이 보기</a>
+  </p>
 
   <!-- 요약 숫자 -->
   <section class="stats" aria-label="검사 요약">
+    <div class="stat" th:if="${view.multiPage}">
+      <span class="stat-label">검사한 페이지</span>
+      <span class="stat-value"><span th:text="${#lists.size(view.pages)}">20</span><small>개</small></span>
+      <span class="stat-sub">웹사이트 전체 점검</span>
+    </div>
     <div class="stat">
       <span class="stat-label">페이지 접속</span>
       <span class="stat-value" th:classappend="${view.accessOk} ? 'ok' : 'bad'" th:text="${view.accessLabel}">정상</span>
-      <span class="stat-sub" th:if="${page?.httpStatus != null}" th:text="'응답 코드 ' + ${page.httpStatus}">응답 코드 200</span>
+      <span class="stat-sub" th:if="${!view.multiPage and page?.httpStatus != null}" th:text="'응답 코드 ' + ${page.httpStatus}">응답 코드 200</span>
+      <span class="stat-sub" th:if="${view.multiPage}">모든 페이지 기준</span>
     </div>
     <div class="stat">
       <span class="stat-label">휴대폰 화면</span>
@@ -53,7 +69,7 @@
         <span th:text="${page.scores.performance ?: '-'}">90</span><small>·</small><span th:text="${page.scores.seo ?: '-'}">80</span>
       </span>
       <span class="stat-value muted" th:unless="${page?.scores != null}">-</span>
-      <span class="stat-sub" th:text="${page?.scores != null} ? '100점 만점' : '측정 안 함'">100점 만점</span>
+      <span class="stat-sub" th:text="${page?.scores != null} ? (${view.multiPage} ? '첫 페이지 · 100점 만점' : '100점 만점') : '측정 안 함'">100점 만점</span>
     </div>
     <div class="stat stat-strong">
       <span class="stat-label">발견된 문제</span>
@@ -65,6 +81,162 @@
     </div>
   </section>
 
+  <!-- 지난 검사와 비교 (같은 주소 · 같은 검사 범위의 지난 검사가 있을 때) -->
+  <section class="compare" th:if="${view.compared}" aria-labelledby="compare-title" th:with="c=${view.comparison}">
+    <h2 id="compare-title">지난 검사와 비교
+      <span class="muted small">
+        <span th:text="'지난 검사 ' + ${#temporals.format(c.previousAt, 'yyyy-MM-dd HH:mm')}">지난 검사 11-16 14:20</span> ·
+        <a th:href="@{/scans/{id}(id=${c.previousJobId})}">지난 결과 보기</a>
+      </span>
+    </h2>
+    <ul class="compare-grid">
+      <li>
+        <button type="button" class="compare-item cmp-good" aria-haspopup="dialog" data-open="tpl-resolved" th:if="${c.resolvedCount > 0}">
+          <span class="compare-label">해결됨</span>
+          <span class="compare-value"><strong th:text="${c.resolvedCount}">12</strong><small>건</small></span>
+          <span class="compare-sub">지난번에 있던 문제가 없어짐</span>
+        </button>
+        <div class="compare-item cmp-zero" th:unless="${c.resolvedCount > 0}">
+          <span class="compare-label">해결됨</span>
+          <span class="compare-value"><strong>0</strong><small>건</small></span>
+          <span class="compare-sub">지난번에 있던 문제가 없어짐</span>
+        </div>
+      </li>
+      <li>
+        <button type="button" class="compare-item cmp-bad" aria-haspopup="dialog" data-open="tpl-new" th:if="${c.newCount > 0}">
+          <span class="compare-label">새로 생김</span>
+          <span class="compare-value"><strong th:text="${c.newCount}">3</strong><small>건</small></span>
+          <span class="compare-sub">지난번에 없던 문제</span>
+        </button>
+        <div class="compare-item cmp-zero" th:unless="${c.newCount > 0}">
+          <span class="compare-label">새로 생김</span>
+          <span class="compare-value"><strong>0</strong><small>건</small></span>
+          <span class="compare-sub">지난번에 없던 문제</span>
+        </div>
+      </li>
+      <li>
+        <div class="compare-item">
+          <span class="compare-label">그대로</span>
+          <span class="compare-value"><strong th:text="${c.keptCount}">20</strong><small>건</small></span>
+          <span class="compare-sub">아직 고쳐지지 않음</span>
+        </div>
+      </li>
+      <li>
+        <div class="compare-item">
+          <span class="compare-label">품질 점수</span>
+          <span class="compare-value">
+            <strong th:text="${c.currentScore ?: '-'}">85</strong><small>점</small>
+            <span class="delta" th:if="${c.scoreDelta != null}"
+                  th:classappend="${c.scoreDelta > 0} ? 'up' : (${c.scoreDelta < 0} ? 'down' : 'same')"
+                  th:text="${c.scoreDelta > 0} ? '+' + ${c.scoreDelta} : (${c.scoreDelta == 0} ? '변화 없음' : ${c.scoreDelta})">+5</span>
+          </span>
+          <span class="compare-sub" th:text="'지난번 ' + (${c.previousScore} ?: '-') + '점'">지난번 80점</span>
+        </div>
+      </li>
+    </ul>
+
+    <!-- 팝업: 해결된 문제 (지난 검사에만 있던 것) -->
+    <template id="tpl-resolved">
+      <div class="detail" th:attr="data-title='해결된 문제 ' + ${c.resolvedCount} + '건'">
+        <p class="small muted">지난 검사에는 있었는데 이번 검사에서는 발견되지 않은 문제입니다.</p>
+        <ul class="resolved-list">
+          <li th:each="r : ${view.resolvedGroups}">
+            <div class="resolved-head">
+              <span class="sev-badge" th:classappend="${'sev-' + #strings.toLowerCase(r.severity)}" th:text="${r.severityLabel}">보통</span>
+              <span class="related-title" th:text="${r.title}">문제</span>
+              <span class="related-count" th:text="${r.count} + '곳'">2곳</span>
+            </div>
+            <ul class="resolved-where">
+              <li th:each="f, st : ${r.items}" th:if="${st.index < 5}">
+                <span th:if="${view.multiPage}" th:text="${view.pathOf(f.pageUrl)} + ' · '">/a.do · </span>
+                <span th:text="${f.target ?: (f.selector ?: '페이지 전체')}">위치</span>
+              </li>
+              <li class="muted" th:if="${r.count > 5}" th:text="'… 외 ' + (${r.count} - 5) + '곳'">외 3곳</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </template>
+
+    <!-- 팝업: 새로 생긴 문제 (누르면 상세 팝업) -->
+    <template id="tpl-new">
+      <div class="detail" th:attr="data-title='새로 생긴 문제 ' + ${c.newCount} + '건'">
+        <p class="small muted">지난 검사에는 없던 문제입니다. 누르면 원인과 해결 방법을 볼 수 있습니다.</p>
+        <ul class="related-list">
+          <li th:each="g : ${view.newGroups}">
+            <button type="button" class="related-item" th:attr="data-open='tpl-' + ${g.id}">
+              <span class="sev-badge" th:classappend="${'sev-' + #strings.toLowerCase(g.severity)}" th:text="${g.severityLabel}">보통</span>
+              <span class="related-title" th:text="${g.title}">문제</span>
+              <span class="related-count" th:text="'새로 ' + ${view.newIn(g)} + '곳'">새로 2곳</span>
+              <span aria-hidden="true">›</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </template>
+  </section>
+  <p class="small muted compare-none" th:unless="${view.compared}">
+    처음 검사한 주소라 비교할 지난 기록이 없습니다. 같은 주소 · 같은 검사 범위로 다시 검사하면 '해결됨 · 새로 생김'을 보여 줍니다.
+  </p>
+
+  <!-- 페이지별 점수표 (사이트 전체 검사일 때): 누르면 그 페이지에서 나온 문제를 팝업으로 -->
+  <section class="page-scores" th:if="${view.multiPage}" aria-labelledby="pages-title">
+    <h2 id="pages-title">페이지별 점수표 <span class="muted small">검사한 순서 · 누르면 그 페이지의 문제를 볼 수 있습니다</span></h2>
+    <ol class="page-list">
+      <li th:each="p : ${view.pages}">
+        <button type="button" class="page-item" aria-haspopup="dialog" th:attr="data-open='tpl-page-' + ${p.index}">
+          <span class="page-score" th:classappend="${'grade-' + p.grade}">
+            <strong th:text="${p.score ?: '–'}">92</strong>
+            <span th:text="${p.gradeLabel}">양호</span>
+          </span>
+          <span class="page-name">
+            <span class="page-title" th:text="${p.displayTitle}">공지사항</span>
+            <span class="page-path" th:text="${p.path}" th:title="${p.url}">/board/notice.do</span>
+          </span>
+          <span class="page-sev" th:if="${p.opened}" aria-label="심각도별 문제 수">
+            <span class="sev-num sev-critical" th:classappend="${p.bySeverity['CRITICAL'] == 0} ? 'zero'" th:title="'심각 ' + ${p.bySeverity['CRITICAL']} + '건'">심각 <b th:text="${p.bySeverity['CRITICAL']}">0</b></span>
+            <span class="sev-num sev-high" th:classappend="${p.bySeverity['HIGH'] == 0} ? 'zero'" th:title="'높음 ' + ${p.bySeverity['HIGH']} + '건'">높음 <b th:text="${p.bySeverity['HIGH']}">0</b></span>
+            <span class="sev-num sev-medium" th:classappend="${p.bySeverity['MEDIUM'] == 0} ? 'zero'" th:title="'보통 ' + ${p.bySeverity['MEDIUM']} + '건'">보통 <b th:text="${p.bySeverity['MEDIUM']}">0</b></span>
+            <span class="sev-num sev-low" th:classappend="${p.bySeverity['LOW'] == 0} ? 'zero'" th:title="'낮음 ' + ${p.bySeverity['LOW']} + '건'">낮음 <b th:text="${p.bySeverity['LOW']}">0</b></span>
+          </span>
+          <span class="page-sev page-fail" th:unless="${p.opened}"
+                th:text="${p.httpStatus != null} ? '페이지가 열리지 않음 (응답 코드 ' + ${p.httpStatus} + ')' : '페이지에 접속할 수 없음'">열리지 않음</span>
+          <span class="group-arrow" aria-hidden="true">›</span>
+        </button>
+
+        <!-- 팝업: 이 페이지에서 나온 문제 -->
+        <template th:id="'tpl-page-' + ${p.index}">
+          <div class="detail" th:attr="data-title=${p.index} + '. ' + ${p.displayTitle}">
+            <div class="detail-meta">
+              <span class="page-score sm" th:classappend="${'grade-' + p.grade}">
+                <strong th:text="${p.score ?: '–'}">92</strong><span th:text="${p.gradeLabel}">양호</span>
+              </span>
+              <span class="page-url" th:text="${p.url}">https://…</span>
+            </div>
+            <div class="related" th:unless="${#lists.isEmpty(p.issues)}">
+              <p class="guide-label">이 페이지에서 발견된 문제 <span class="muted">누르면 원인과 해결 방법을 볼 수 있습니다</span></p>
+              <ul class="related-list">
+                <li th:each="i : ${p.issues}">
+                  <button type="button" class="related-item" th:attr="data-open='tpl-' + ${i.groupId}">
+                    <span class="sev-badge" th:classappend="${'sev-' + #strings.toLowerCase(i.severity)}" th:text="${i.manual} ? '확인' : ${i.severityLabel}">보통</span>
+                    <span class="related-title" th:text="${i.title}">문제</span>
+                    <span class="related-count" th:text="${i.count} + '곳'">2곳</span>
+                    <span aria-hidden="true">›</span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <p class="empty small" th:if="${#lists.isEmpty(p.issues)}">이 페이지에서는 발견된 문제가 없습니다.</p>
+            <p class="small muted score-rule" th:text="'점수 계산: ' + ${view.scoreRule}">점수 계산</p>
+          </div>
+        </template>
+      </li>
+    </ol>
+    <p class="small muted score-rule">
+      <span th:text="'점수는 WebOps가 정한 계산식입니다. ' + ${view.scoreRule}">점수 계산</span>
+      80점 이상 양호 · 50~79점 주의 · 50점 미만 위험. '직접 확인 필요' 항목은 빼고 계산하며, Lighthouse 점수와는 다릅니다.
+    </p>
+  </section>
 
   <!-- 검사 항목별 결과: 문제 있는 항목 / 이상 없는 항목 / 측정 안 한 항목으로 구역을 나눈다 -->
   <section class="checklist" aria-labelledby="checklist-title">
@@ -236,34 +408,43 @@
  <!-- ===== 오른쪽: 개선 방안 ~ 문제 목록 (따로 스크롤) ===== -->
  <div class="pane pane-right" id="pane-right" tabindex="0" aria-label="개선 방안과 문제 목록">
 
-  <!-- 심각도 탭 (오른쪽 상단 고정): 누르면 개선 방안과 문제 목록이 그 심각도만 보인다 -->
-  <div class="sev-tabs" role="group" aria-label="심각도별로 보기">
-    <button type="button" class="sev-tab" data-sev="ALL" aria-pressed="true">
-      전체 <strong th:text="${summary.total}">50</strong>
-    </button>
-    <button type="button" class="sev-tab sev-critical" data-sev="CRITICAL" aria-pressed="false"
-            th:disabled="${summary.bySeverity['CRITICAL'] == 0}">
-      심각 <strong th:text="${summary.bySeverity['CRITICAL']}">0</strong>
-    </button>
-    <button type="button" class="sev-tab sev-high" data-sev="HIGH" aria-pressed="false"
-            th:disabled="${summary.bySeverity['HIGH'] == 0}">
-      높음 <strong th:text="${summary.bySeverity['HIGH']}">0</strong>
-    </button>
-    <button type="button" class="sev-tab sev-medium" data-sev="MEDIUM" aria-pressed="false"
-            th:disabled="${summary.bySeverity['MEDIUM'] == 0}">
-      보통 <strong th:text="${summary.bySeverity['MEDIUM']}">0</strong>
-    </button>
-    <button type="button" class="sev-tab sev-low" data-sev="LOW" aria-pressed="false"
-            th:disabled="${summary.bySeverity['LOW'] == 0}">
-      낮음 <strong th:text="${summary.bySeverity['LOW']}">0</strong>
-    </button>
+  <!-- 걸러 보기 · 정렬 (오른쪽 상단 고정): 개선 방안과 문제 목록에 함께 적용된다.
+       선택지 옆 건수는 다른 상자에서 고른 조건에 맞춰 바뀐다 (예: 유형 '접근성'이면 심각도 건수도 접근성 안에서) -->
+  <div class="filter-panel" role="group" aria-label="개선 방안과 문제 목록 걸러 보기">
+    <label class="fsel">
+      <span class="fsel-label">유형</span>
+      <select id="f-cat" aria-controls="issue-list">
+        <option value="ALL" data-label="전체 유형" th:text="'전체 유형 ' + ${summary.total} + '건'">전체 유형 50건</option>
+        <option th:each="o : ${view.typeOptions}" th:value="${o.code}" th:attr="data-label=${o.label}"
+                th:text="${o.label} + ' ' + ${o.count} + '건'">접근성 46건</option>
+      </select>
+    </label>
+    <label class="fsel">
+      <span class="fsel-label">심각도</span>
+      <select id="f-sev" aria-controls="issue-list">
+        <option value="ALL" data-label="전체" th:text="'전체 ' + ${summary.total} + '건'">전체 50건</option>
+        <option th:each="o : ${view.severityOptions}" th:value="${o.code}" th:attr="data-label=${o.label}"
+                th:disabled="${o.count == 0}" th:text="${o.label} + ' ' + ${o.count} + '건'">심각 4건</option>
+      </select>
+    </label>
+    <label class="fsel">
+      <span class="fsel-label">정렬</span>
+      <select id="f-sort" aria-controls="issue-list">
+        <option value="priority">급한 순</option>
+        <option value="count">많이 발견된 순</option>
+        <option value="type">유형 순</option>
+      </select>
+    </label>
+    <button type="button" class="btn btn-sm" id="f-reset" hidden>처음 상태로</button>
   </div>
 
   <!-- 개선 방안: 급한 순서대로 할 일 -->
   <section class="plan" th:unless="${#lists.isEmpty(view.plan)}" aria-labelledby="plan-title">
-    <h2 id="plan-title">개선 방안 <span class="muted small">급한 순서 · 누르면 원인과 해결 방법이 팝업으로 열림</span></h2>
-    <ol class="plan-list">
-      <li th:each="p : ${view.plan}" class="plan-row" th:attr="data-sev=${p.severity}, data-cat=${p.category}">
+    <h2 id="plan-title">개선 방안 <span class="muted small" id="plan-count" th:text="${#lists.size(view.plan)} + '가지'">12가지</span>
+      <span class="muted small">번호는 급한 순서 · 누르면 원인과 해결 방법이 팝업으로 열림</span></h2>
+    <ol class="plan-list" id="plan-list">
+      <li th:each="p, st : ${view.plan}" class="plan-row"
+          th:attr="data-sev=${p.severity}, data-cat=${p.category}, data-count=${p.count}, data-order=${st.index}, data-catrank=${view.catRank(p.category)}">
         <button type="button" class="plan-item" aria-haspopup="dialog" th:attr="data-goto=${p.groupId}">
           <span class="plan-rank" th:text="${p.rank}">1</span>
           <span class="sev-badge" th:classappend="${'sev-' + #strings.toLowerCase(p.severity)}" th:text="${p.severityLabel}">심각</span>
@@ -285,24 +466,24 @@
         <span id="filter-title">전체 문제</span>
         <span class="muted" id="filter-count" th:text="${view.issueCount} + '건'">10건</span>
       </h2>
-      <div class="filter-bar" role="group" aria-label="목록 걸러 보기">
-        <button type="button" class="chip" data-filter="ALL" data-label="전체 문제" aria-pressed="true" aria-controls="issue-list">전체 보기</button>
-        <button type="button" class="chip" th:if="${view.manualCount > 0}" data-filter="MANUAL" data-label="직접 확인 필요"
-                aria-pressed="false" aria-controls="issue-list"
-                th:text="'직접 확인 필요 ' + ${view.manualCount} + '건'">직접 확인 필요</button>
-      </div>
     </div>
 
     <p class="empty" id="empty-msg" th:hidden="${view.issueCount > 0}">발견된 문제가 없습니다.</p>
 
     <div class="groups" id="issue-list">
-      <article class="group" th:each="g : ${view.groups}" th:id="${g.id}"
-               th:attr="data-cat=${g.filterCode}, data-sev=${g.severity}, data-count=${g.count}" th:hidden="${g.manual}">
+      <article class="group" th:each="g, st : ${view.groups}" th:id="${g.id}"
+               th:attr="data-cat=${g.filterCode}, data-sev=${g.severity}, data-count=${g.count}, data-order=${st.index}, data-catrank=${g.manual ? 99 : view.catRank(g.category)}"
+               th:hidden="${g.manual}">
         <!-- 목록 한 줄: 누르면 팝업으로 상세 내용 -->
         <button type="button" class="group-row" aria-haspopup="dialog" th:attr="data-open='tpl-' + ${g.id}">
           <span class="sev-badge" th:classappend="${'sev-' + #strings.toLowerCase(g.severity)}" th:text="${g.severityLabel}">심각</span>
           <span class="group-cat" th:text="${g.categoryLabel}">접근성</span>
           <span class="group-title" th:text="${g.title}">이미지에 설명 글(대체 텍스트)이 없음</span>
+          <!-- 접근성: 어느 지침 항목인지 목록에서도 바로 보이게 -->
+          <span class="kwcag-chip" th:if="${view.guideline(g) != null}" th:with="gl=${view.guideline(g)}"
+                th:text="${gl.hasKwcag} ? 'KWCAG ' + ${gl.kwcagCode} : 'WCAG ' + ${gl.wcagCode}"
+                th:title="${gl.hasKwcag} ? ${gl.kwcagCode} + ' ' + ${gl.kwcagName} : 'WCAG ' + ${gl.wcagCode} + ' ' + ${gl.wcagName}">KWCAG 1.1.1</span>
+          <span class="new-badge" th:if="${view.newIn(g) > 0}" th:text="'새로 ' + ${view.newIn(g)}">새로 2</span>
           <span class="group-count" th:text="${g.count} + '건'">3건</span>
           <span class="group-arrow" aria-hidden="true">›</span>
         </button>
@@ -313,7 +494,24 @@
           <div class="detail-meta">
             <span class="sev-badge" th:classappend="${'sev-' + #strings.toLowerCase(g.severity)}" th:text="${g.severityLabel}">심각</span>
             <span th:text="${g.categoryLabel}">접근성</span>
-            <span class="muted" th:text="'이 페이지에서 ' + ${g.count} + '곳'">3곳</span>
+            <span class="muted" th:text="${view.multiPage} ? ${g.count} + '곳 · 페이지 ' + ${g.pageCount} + '개' : '이 페이지에서 ' + ${g.count} + '곳'">3곳</span>
+          </div>
+          <!-- 접근성: 지키지 않은 지침 항목 (한국형 KWCAG 2.2 + 국제 WCAG 2.2) -->
+          <div class="kwcag" th:if="${view.guideline(g) != null}" th:with="gl=${view.guideline(g)}">
+            <p class="kwcag-label">지키지 않은 접근성 지침</p>
+            <div class="kwcag-main" th:if="${gl.hasKwcag}">
+              <span class="kwcag-code" th:text="${gl.kwcagCode}">1.1.1</span>
+              <strong class="kwcag-name" th:text="${gl.kwcagName}">적절한 대체 텍스트 제공</strong>
+              <span class="kwcag-principle" th:text="${gl.principle}">인식의 용이성</span>
+            </div>
+            <div class="kwcag-main" th:unless="${gl.hasKwcag}">
+              <strong class="kwcag-name">한국형 지침(KWCAG)에 따로 대응하는 항목 없음</strong>
+            </div>
+            <dl class="kwcag-std">
+              <div th:if="${gl.hasKwcag}"><dt>한국형</dt><dd>한국형 웹 콘텐츠 접근성 지침(KWCAG) 2.2</dd></div>
+              <div><dt>국제 기준</dt><dd th:text="'WCAG 2.2 · ' + ${gl.wcagCode} + ' ' + ${gl.wcagName} + ' (' + ${gl.level} + '등급)'">WCAG 2.2 · 1.1.1 텍스트 아닌 콘텐츠 (A등급)</dd></div>
+            </dl>
+            <p class="kwcag-note">자동 검사 규칙을 지침 항목에 맞춰 본 것으로, 웹 접근성 인증 심사의 판정과 다를 수 있습니다.</p>
           </div>
           <div class="guide">
             <div class="guide-row" th:if="${g.why}">
@@ -346,32 +544,59 @@
             <a th:if="${g.helpUrl}" th:href="${g.helpUrl}" target="_blank" rel="noopener noreferrer">자세한 설명 (영문, 새 창)</a>
           </p>
 
-          <p class="guide-label">이 페이지에서 발견된 곳</p>
-          <div class="table-wrap">
-            <table class="table items">
-              <thead>
-                <tr>
-                  <th scope="col" class="num">#</th>
-                  <th scope="col">어디에 있나요 <span class="muted">(코드 위치 · 주소)</span></th>
-                  <th scope="col">문제가 된 코드 · 내용</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr th:each="f, st : ${g.items}">
-                  <td class="num" th:text="${st.count}">1</td>
-                  <td class="loc">
-                    <code th:if="${f.selector}" th:text="${f.selector}">img</code>
-                    <span th:if="${f.target}" class="target-link" th:text="${f.target}">https://…</span>
-                    <span th:if="${f.selector == null and f.target == null}" class="muted">페이지 전체</span>
-                  </td>
-                  <td>
-                    <pre class="evidence" th:if="${f.evidence}" th:text="${f.evidence}">&lt;img src="…"&gt;</pre>
-                    <p class="item-desc" th:if="${f.source != 'axe-core' and f.description != g.title}" th:text="${f.description}">설명</p>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <p class="guide-label">
+            <span th:text="${view.multiPage} ? '발견된 곳' : '이 페이지에서 발견된 곳'">이 페이지에서 발견된 곳</span>
+            <span class="muted" th:if="${g.shotCount > 0}">· 화면 캡처의 빨간 상자가 문제 위치입니다</span>
+          </p>
+          <!-- 발견된 곳마다: 화면 캡처(빨간 상자) → 주소 · 코드 위치 · 문제가 된 코드 -->
+          <ol class="found-list">
+            <li class="found" th:each="f, st : ${g.items}">
+              <div class="found-head">
+                <span class="found-num" th:text="${st.count}">1</span>
+                <span class="new-badge" th:if="${view.isNew(f)}">새로 생김</span>
+                <span class="found-page" th:if="${view.multiPage and !f.shared}" th:title="${f.pageUrl}"
+                      th:text="'페이지 ' + ${view.pathOf(f.pageUrl)}">페이지 /sub/a.do</span>
+                <!-- 머리글·바닥글처럼 여러 페이지에 똑같이 있는 문제: 1건으로 셈 -->
+                <span class="shared-badge" th:if="${f.shared}" th:text="'공통 영역 · 페이지 ' + ${#lists.size(f.pageList)} + '개'">공통 영역 · 페이지 20개</span>
+                <span class="muted small" th:if="${f.selector == null and f.target == null}">페이지 전체</span>
+              </div>
+              <details class="shared-pages" th:if="${f.shared}">
+                <summary th:text="'같은 문제가 있는 페이지 ' + ${#lists.size(f.pageList)} + '개 보기 (고칠 곳은 한 곳이라 1건으로 셉니다)'">페이지 보기</summary>
+                <ul>
+                  <li th:each="u : ${f.pageList}" th:text="${view.pathOf(u)}" th:title="${u}">/sub/a.do</li>
+                </ul>
+              </details>
+              <figure class="found-shot" th:if="${f.screenshotName}"
+                      th:with="shotUrl=@{/scans/{id}/shots/{n}(id=${job.id},n=${f.screenshotName})}">
+                <a th:href="${shotUrl}" target="_blank" rel="noopener" title="크게 보기 (새 창)">
+                  <img th:src="${shotUrl}" loading="lazy" alt="문제 위치 화면 캡처. 빨간 상자로 표시한 부분이 문제가 된 곳입니다.">
+                </a>
+                <figcaption>
+                  <span class="shot-tag" th:text="${f.category == 'MOBILE'} ? '휴대폰 화면 (가로 360px)' : 'PC 화면'">PC 화면</span>
+                  <span>빨간 상자가 문제 위치 · 누르면 크게 보기</span>
+                </figcaption>
+              </figure>
+              <!-- 캡처 아래 정보: 왼쪽 이름표 칸 + 오른쪽 내용 칸 -->
+              <dl class="found-info" th:if="${f.target != null or f.selector != null or f.evidence != null or (f.source != 'axe-core' and f.description != g.title)}">
+                <div class="fi-row fi-desc" th:if="${f.source != 'axe-core' and f.description != g.title}">
+                  <dt>문제 내용</dt>
+                  <dd th:text="${f.description}">깨진 링크: 없는 페이지(404)</dd>
+                </div>
+                <div class="fi-row" th:if="${f.target}">
+                  <dt th:text="${view.targetLabel(f)}">연결된 주소</dt>
+                  <dd><span class="fi-url" th:text="${f.target}">https://…</span></dd>
+                </div>
+                <div class="fi-row" th:if="${f.selector}">
+                  <dt>코드 위치 <span class="fi-sub">개발자용</span></dt>
+                  <dd><code class="fi-code" th:text="${f.selector}">img</code></dd>
+                </div>
+                <div class="fi-row" th:if="${f.evidence}">
+                  <dt>문제가 된 코드</dt>
+                  <dd><pre class="evidence" th:text="${f.evidence}">&lt;img src="…"&gt;</pre></dd>
+                </div>
+              </dl>
+            </li>
+          </ol>
         </div>
         </template>
       </article>
@@ -405,23 +630,53 @@
 </template>
 
 <script>
-  // 항목 카드·필터 버튼을 누르면 아래 문제 목록을 그 분류만 보이게 걸러 준다 (새로고침 없음).
+  // 오른쪽 위 선택 상자(유형 · 심각도 · 정렬)와 왼쪽 검사 항목 카드로 개선 방안 · 문제 목록을 걸러 보고 정렬한다 (새로고침 없음).
   (() => {
-    // 걸러 보기 조건 두 가지: 분류(항목 카드·전체/직접 확인 칩) + 심각도(오른쪽 상단 탭)
     const groups = [...document.querySelectorAll('.group')];
     const planRows = [...document.querySelectorAll('.plan-row')];
-    const filterButtons = [...document.querySelectorAll('button[data-filter]')];
-    const sevTabs = [...document.querySelectorAll('button[data-sev]')];
+    const planList = document.getElementById('plan-list');
+    const groupList = document.getElementById('issue-list');
+    const cardButtons = [...document.querySelectorAll('button.check-item[data-filter]')];
+    const catSel = document.getElementById('f-cat');
+    const sevSel = document.getElementById('f-sev');
+    const sortSel = document.getElementById('f-sort');
+    const resetBtn = document.getElementById('f-reset');
     const titleEl = document.getElementById('filter-title');
     const countEl = document.getElementById('filter-count');
     const emptyEl = document.getElementById('empty-msg');
     const planEmptyEl = document.getElementById('plan-empty');
+    const planCountEl = document.getElementById('plan-count');
     const issuesEl = document.getElementById('issues');
-    const SEV_LABEL = { CRITICAL: '심각', HIGH: '높음', MEDIUM: '보통', LOW: '낮음' };
-    const state = { cat: 'ALL', sev: 'ALL' };
+    const state = { cat: 'ALL', sev: 'ALL', sort: 'priority' };
 
-    const catMatch = (cat) => state.cat === 'ALL' ? cat !== 'MANUAL' : cat === state.cat;
-    const sevMatch = (sev) => state.sev === 'ALL' || sev === state.sev;
+    // 유형 '전체'는 직접 확인 필요 항목을 빼고 보여 준다 (직접 확인 필요는 유형에서 따로 고름)
+    const catMatch = (cat, want = state.cat) => (want === 'ALL' ? cat !== 'MANUAL' : cat === want);
+    const sevMatch = (sev, want = state.sev) => want === 'ALL' || sev === want;
+    const sumOf = (pred) => groups.filter(pred).reduce((n, g) => n + Number(g.dataset.count), 0);
+
+    // 정렬: 급한 순(처음 순서) / 많이 발견된 순 / 유형 순. 같으면 급한 순으로
+    const SORTS = {
+      priority: (a, b) => a.dataset.order - b.dataset.order,
+      count: (a, b) => b.dataset.count - a.dataset.count || a.dataset.order - b.dataset.order,
+      type: (a, b) => a.dataset.catrank - b.dataset.catrank || a.dataset.order - b.dataset.order,
+    };
+    const sortInto = (list, items) => {
+      if (list) [...items].sort(SORTS[state.sort]).forEach((el) => list.append(el));
+    };
+
+    // 선택지 옆 건수: 다른 상자에서 고른 조건 안에서 센다. 0건이면 고를 수 없게 (지금 고른 것은 예외)
+    function refreshOptions() {
+      for (const o of catSel.options) {
+        const n = sumOf((g) => catMatch(g.dataset.cat, o.value) && sevMatch(g.dataset.sev));
+        o.textContent = o.dataset.label + ' ' + n + '건';
+        o.disabled = n === 0 && o.value !== 'ALL' && o.value !== state.cat;
+      }
+      for (const o of sevSel.options) {
+        const n = sumOf((g) => catMatch(g.dataset.cat) && sevMatch(g.dataset.sev, o.value));
+        o.textContent = o.dataset.label + ' ' + n + '건';
+        o.disabled = n === 0 && o.value !== 'ALL' && o.value !== state.sev;
+      }
+    }
 
     function render() {
       let total = 0;
@@ -436,37 +691,45 @@
         p.hidden = !show;
         if (show) planShown++;
       }
-      if (planEmptyEl) planEmptyEl.hidden = planShown > 0 || planRows.length === 0;
+      sortInto(planList, planRows);
+      sortInto(groupList, groups);
 
-      for (const b of filterButtons) b.setAttribute('aria-pressed', String(b.dataset.filter === state.cat));
-      for (const b of sevTabs) b.setAttribute('aria-pressed', String(b.dataset.sev === state.sev));
+      catSel.value = state.cat;
+      sevSel.value = state.sev;
+      sortSel.value = state.sort;
+      refreshOptions();
+      for (const b of cardButtons) b.setAttribute('aria-pressed', String(b.dataset.filter === state.cat));
 
-      const catLabel = filterButtons.find((b) => b.dataset.filter === state.cat)?.dataset.label ?? '전체 문제';
-      titleEl.textContent = state.sev === 'ALL' ? catLabel : catLabel + ' · ' + SEV_LABEL[state.sev];
+      const catLabel = state.cat === 'ALL' ? '전체 문제' : catSel.selectedOptions[0]?.dataset.label ?? '전체 문제';
+      const sevLabel = state.sev === 'ALL' ? '' : ' · ' + sevSel.selectedOptions[0]?.dataset.label;
+      titleEl.textContent = catLabel + sevLabel;
       countEl.textContent = total + '건';
       emptyEl.hidden = total > 0;
+      if (planCountEl) planCountEl.textContent = planShown + '가지';
+      if (planEmptyEl) planEmptyEl.hidden = planShown > 0 || planRows.length === 0;
+      resetBtn.hidden = state.cat === 'ALL' && state.sev === 'ALL' && state.sort === 'priority';
     }
 
-    // 분류에 맞게 목록을 바꾼다 (외부에서도 쓰므로 함수로)
-    function apply(cat) {
-      state.cat = cat;
+    catSel.addEventListener('change', () => { state.cat = catSel.value; render(); });
+    sevSel.addEventListener('change', () => { state.sev = sevSel.value; render(); });
+    sortSel.addEventListener('change', () => { state.sort = sortSel.value; render(); });
+    resetBtn.addEventListener('click', () => {
+      Object.assign(state, { cat: 'ALL', sev: 'ALL', sort: 'priority' });
       render();
-    }
+      catSel.focus();
+    });
 
-    for (const b of filterButtons) {
+    // 왼쪽 검사 항목 카드: 누르면 그 유형만 (다시 누르면 전체로), 유형 선택 상자도 함께 바뀐다.
+    // 오른쪽은 맨 위(개선 방안)부터 보이게 한다. 문제 목록으로 내려가면 개선 방안이 위로 밀려나 안 보이는 것처럼 보였음.
+    const planSection = document.getElementById('plan-title')?.closest('section');
+    for (const b of cardButtons) {
       b.addEventListener('click', () => {
-        // 이미 선택된 항목을 다시 누르면 전체 목록으로 돌아간다
-        const again = b.dataset.filter !== 'ALL' && b.getAttribute('aria-pressed') === 'true';
-        apply(again ? 'ALL' : b.dataset.filter);
-        if (b.classList.contains('check-item')) issuesEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    }
-
-    for (const b of sevTabs) {
-      b.addEventListener('click', () => {
-        const again = b.dataset.sev !== 'ALL' && b.getAttribute('aria-pressed') === 'true';
-        state.sev = again ? 'ALL' : b.dataset.sev;
+        state.cat = b.getAttribute('aria-pressed') === 'true' ? 'ALL' : b.dataset.filter;
         render();
+        const pane = document.getElementById('pane-right');
+        const twoPanes = getComputedStyle(pane).overflowY === 'auto';
+        if (twoPanes) pane.scrollTo({ top: 0, behavior: 'smooth' });
+        else (planSection ?? issuesEl).scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     }
 
@@ -583,6 +846,34 @@
         openDetail('tpl-' + g.id, b);
       });
     }
+
+    // ---------- PDF 보고서: 만드는 데 몇 초 걸리므로 진행 중임을 보여 주고, 끝나면 내려받는다 ----------
+    const pdfBtn = document.getElementById('pdf-btn');
+    pdfBtn?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (pdfBtn.getAttribute('aria-busy') === 'true') return;
+      const label = pdfBtn.textContent;
+      pdfBtn.setAttribute('aria-busy', 'true');
+      pdfBtn.textContent = 'PDF 만드는 중…';
+      try {
+        const res = await fetch(pdfBtn.href);
+        if (!res.ok) throw new Error('응답 코드 ' + res.status);
+        const blob = await res.blob();
+        const name = /filename="?([^";]+)"?/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? 'webops-report.pdf';
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      } catch (err) {
+        alert('PDF 보고서를 만들지 못했습니다. 잠시 후 다시 눌러 주세요. (' + err.message + ')');
+      } finally {
+        pdfBtn.textContent = label;
+        pdfBtn.removeAttribute('aria-busy');
+      }
+    });
   })();
 </script>
 </body>

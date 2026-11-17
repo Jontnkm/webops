@@ -20,13 +20,133 @@ export function makeJobId(date = new Date()) {
 }
 
 /**
- * @param {{ jobId: string, startedAt: Date, finishedAt: Date, raw: any, toolVersion: string, browserVersion: string|null }} input
+ * @param {{ jobId: string, startedAt: Date, finishedAt: Date, toolVersion: string, browserVersion: string|null,
+ *           raw: { pages: any[], warnings: string[], scope?: object } }} input
+ *   raw.pages: 페이지마다 { requestedUrl, loadError, page, a11y, links, mobile, lighthouse, shots }
  */
 export function buildReport({ jobId, startedAt, finishedAt, raw, toolVersion, browserVersion }) {
+  const all = [];
+  const warnings = [...raw.warnings];
+  const multi = raw.pages.length > 1;
+  const pages = raw.pages.map((rp) => {
+    const own = pageFindings(jobId, rp, warnings, multi);
+    all.push(...own);
+    // 페이지별 요약(점수표용)은 합치기 전 기준: 공통 영역 문제도 그 페이지에 실제로 있으므로 각 페이지에 반영
+    return pageEntry(rp, own);
+  });
+  // 머리글·바닥글·퀵메뉴처럼 여러 페이지에 똑같이 있는 문제는 1건으로 합친다 (고칠 곳은 한 곳)
+  const findings = mergeShared(all);
+  // 도구 정보는 Lighthouse를 돌린 첫 페이지 기준
+  const first = raw.pages[0] ?? {};
+
+  findings.sort(
+    (a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity) || Number(a.manualCheck) - Number(b.manualCheck),
+  );
+
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    jobId,
+    tool: {
+      name: 'webops-runner',
+      version: toolVersion,
+      browser: browserVersion,
+      axeCore: raw.pages.find((p) => p.a11y)?.a11y.engineVersion ?? null,
+      lighthouse: first.lighthouse?.version ?? null,
+    },
+    startedAt: startedAt.toISOString(),
+    finishedAt: finishedAt.toISOString(),
+    durationMs: finishedAt - startedAt,
+    // 검사 범위: maxPages(요청한 최대 페이지 수), pageCount(실제 검사한 수), linksChecked(확인한 서로 다른 링크 수)
+    scope: raw.scope ?? null,
+    pages,
+    summary: summarize(findings),
+    findings,
+    warnings,
+  };
+}
+
+/**
+ * 여러 페이지에서 나온 '같은 문제'를 1건으로 합친다. 합친 항목의 pages에 문제가 있는 페이지 주소를 모두 담는다.
+ * 같은 문제의 기준 (sharedKey):
+ *   - 링크 · 이미지 · 파일 · 데이터 요청 · 보안 연결: 같은 규칙 + 같은 주소(target)
+ *   - 화면 동작(스크립트 오류): 같은 규칙 + 같은 메시지
+ *   - 접근성 · 휴대폰 화면: 같은 규칙 + 같은 위치(selector) + 같은 코드
+ *   - 접속 · 로딩 속도 · 검색 노출은 페이지마다 다른 문제이므로 합치지 않는다
+ * 같은 페이지 안의 항목끼리는 합치지 않는다.
+ * 합친 항목의 fingerprint는 페이지 주소를 빼고 만들어, 다음 검사에서 공통 영역 문제를 같은 문제로 알아본다.
+ */
+export function mergeShared(findings) {
+  const byKey = new Map();
+  const out = [];
+  for (const f of findings) {
+    const key = sharedKey(f);
+    const hit = key ? byKey.get(key) : null;
+    if (hit && !hit.pages.includes(f.pageUrl)) {
+      hit.pages.push(f.pageUrl);
+      if (!hit.screenshot && f.screenshot) hit.screenshot = f.screenshot;
+      continue;
+    }
+    const copy = { ...f, pages: [f.pageUrl] };
+    if (key && !hit) byKey.set(key, copy);
+    out.push(copy);
+  }
+  for (const f of out) {
+    if (f.pages.length > 1) f.fingerprint = fingerprint('shared', f.ruleId, sharedKey(f));
+  }
+  return out;
+}
+
+function sharedKey(f) {
+  const base = `${f.manualCheck ? 'M' : 'F'}|${f.source}|${f.ruleId}`;
+  switch (f.category) {
+    case 'LINK':
+    case 'IMAGE':
+    case 'RESOURCE':
+    case 'API':
+    case 'SECURITY':
+      return f.target ? `${base}|t|${f.target}` : null;
+    case 'SCRIPT':
+      return `${base}|e|${f.evidence ?? ''}|${f.target ?? ''}`;
+    case 'ACCESSIBILITY':
+    case 'MOBILE':
+      return f.selector ? `${base}|s|${f.selector}|${f.evidence ?? ''}` : null;
+    default:
+      return null; // AVAILABILITY, PERFORMANCE, SEO
+  }
+}
+
+function pageEntry(raw, own) {
+  return {
+    requestedUrl: raw.requestedUrl,
+    pageUrl: raw.page?.finalUrl ?? raw.requestedUrl,
+    httpStatus: raw.page?.httpStatus ?? null,
+    title: raw.page?.title ?? null,
+    scores: raw.lighthouse?.scores ?? null,
+    metrics: raw.lighthouse?.metrics ?? null,
+    metricDetails: raw.lighthouse?.metricDetails ?? null,
+    linkCount: raw.links?.total ?? null,
+    linksChecked: raw.links?.checked.length ?? null,
+    imageCount: raw.page?.imageCount ?? null,
+    // 끝까지 스크롤한 결과: 내린 횟수, 페이지 높이, 스크롤하며 추가로 불러온 파일 수
+    scroll: raw.page?.scroll ?? null,
+    mobile: raw.mobile
+      ? { pageUrl: raw.mobile.finalUrl, viewportWidth: raw.mobile.viewportWidth, scrollWidth: raw.mobile.scrollWidth }
+      : null,
+    summary: summarize(own),
+  };
+}
+
+/** 페이지 하나의 검사 결과 → 표준 형식의 발견 항목 목록 */
+function pageFindings(jobId, raw, warnings, multi) {
   const pageUrl = raw.page?.finalUrl ?? raw.requestedUrl;
   const findings = [];
-  const add = (f) => findings.push(toFinding(jobId, pageUrl, f));
-  const warnings = [...raw.warnings];
+  // 문제 위치 캡처: 휴대폰 화면 문제는 휴대폰으로 찍은 것, 나머지는 PC 화면에서 찍은 것
+  const shotOf = (f) => {
+    if (!f.selector) return null;
+    const map = f.category === 'MOBILE' ? raw.mobile?.shots : raw.shots;
+    return map?.[f.selector] ?? null;
+  };
+  const add = (f) => findings.push(toFinding(jobId, pageUrl, { ...f, screenshot: shotOf(f) }));
 
   // 1) 페이지 접속
   if (raw.loadError) {
@@ -154,7 +274,8 @@ export function buildReport({ jobId, startedAt, finishedAt, raw, toolVersion, br
   // 5) 링크
   if (raw.links) {
     if (raw.links.truncated) {
-      warnings.push(`링크 ${raw.links.total}개 중 앞의 ${raw.links.checked.length}개만 확인함 (--max-links로 조정)`);
+      const on = multi ? `${pageUrl} 페이지: ` : '';
+      warnings.push(`${on}링크 ${raw.links.total}개 중 앞의 ${raw.links.checked.length}개만 확인함 (--max-links로 조정)`);
     }
     for (const link of raw.links.checked) {
       if (link.ok) continue;
@@ -206,44 +327,7 @@ export function buildReport({ jobId, startedAt, finishedAt, raw, toolVersion, br
     }
   }
 
-  findings.sort(
-    (a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity) || Number(a.manualCheck) - Number(b.manualCheck),
-  );
-
-  return {
-    schemaVersion: SCHEMA_VERSION,
-    jobId,
-    tool: {
-      name: 'webops-runner',
-      version: toolVersion,
-      browser: browserVersion,
-      axeCore: raw.a11y?.engineVersion ?? null,
-      lighthouse: raw.lighthouse?.version ?? null,
-    },
-    startedAt: startedAt.toISOString(),
-    finishedAt: finishedAt.toISOString(),
-    durationMs: finishedAt - startedAt,
-    pages: [
-      {
-        requestedUrl: raw.requestedUrl,
-        pageUrl,
-        httpStatus: raw.page?.httpStatus ?? null,
-        title: raw.page?.title ?? null,
-        scores: raw.lighthouse?.scores ?? null,
-        metrics: raw.lighthouse?.metrics ?? null,
-        metricDetails: raw.lighthouse?.metricDetails ?? null,
-        linkCount: raw.links?.total ?? null,
-        linksChecked: raw.links?.checked.length ?? null,
-        imageCount: raw.page?.imageCount ?? null,
-        mobile: raw.mobile
-          ? { pageUrl: raw.mobile.finalUrl, viewportWidth: raw.mobile.viewportWidth, scrollWidth: raw.mobile.scrollWidth }
-          : null,
-      },
-    ],
-    summary: summarize(findings),
-    findings,
-    warnings,
-  };
+  return findings;
 }
 
 function toFinding(jobId, pageUrl, f) {
@@ -263,6 +347,8 @@ function toFinding(jobId, pageUrl, f) {
     description: f.description,
     helpUrl: f.helpUrl ?? null,
     manualCheck: Boolean(f.manualCheck),
+    // 문제 위치를 빨간 상자로 표시한 캡처 (리포트 파일 기준 상대 경로, 없으면 null)
+    screenshot: f.screenshot ?? null,
     // 같은 페이지·규칙·위치면 같은 값 → 다음 검사에서 "같은 문제인지" 비교하는 열쇠
     fingerprint: fingerprint(pageUrl, f.ruleId, selector ?? target ?? f.evidence ?? ''),
   };

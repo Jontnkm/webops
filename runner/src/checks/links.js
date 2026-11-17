@@ -4,9 +4,10 @@ const USER_AGENT = 'Mozilla/5.0 (compatible; WebOpsRunner/0.1)';
 
 /**
  * @param {{ href: string, selector: string, text: string }[]} links
- * @param {{ maxLinks?: number, concurrency?: number, linkTimeoutMs?: number }} opts
+ * @param {{ maxLinks?: number, concurrency?: number, linkTimeoutMs?: number, cache?: Map<string, Promise<object>> }} opts
+ *   cache: 여러 페이지를 검사할 때 같은 주소를 다시 요청하지 않도록 결과를 나눠 쓴다 (주소 → 확인 결과)
  */
-export async function checkLinks(links, { maxLinks = 100, concurrency = 5, linkTimeoutMs = 10000 } = {}) {
+export async function checkLinks(links, { maxLinks = 100, concurrency = 5, linkTimeoutMs = 10000, cache = new Map() } = {}) {
   // 같은 주소는 한 번만 확인하되, 페이지 안 위치는 모두 기억한다.
   const byUrl = new Map();
   let skipped = 0;
@@ -30,7 +31,8 @@ export async function checkLinks(links, { maxLinks = 100, concurrency = 5, linkT
   const all = [...byUrl.values()];
   const targets = all.slice(0, maxLinks);
   await runPool(targets, concurrency, async (target) => {
-    Object.assign(target, await probe(target.url, linkTimeoutMs));
+    if (!cache.has(target.url)) cache.set(target.url, probe(target.url, linkTimeoutMs));
+    Object.assign(target, await cache.get(target.url));
   });
 
   return { total: all.length, checked: targets, truncated: all.length > targets.length, skipped };

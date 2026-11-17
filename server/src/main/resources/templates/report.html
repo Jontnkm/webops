@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<!-- 인쇄용 보고서 (A4). 'PDF 보고서' 버튼이 이 화면을 PDF로 만든다. 브라우저에서 열어 바로 인쇄해도 된다. -->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="'검사 보고서 ' + ${job.id} + ' | WebOps'">검사 보고서 | WebOps</title>
+  <link rel="stylesheet" th:href="@{/css/report.css}">
+</head>
+<body th:with="page=${view.page}, summary=${view.report.summary}, target=${page != null ? page.pageUrl : job.url}">
+
+<!-- 화면에서만 보이는 도구 막대 (인쇄·PDF에는 나오지 않음) -->
+<div class="toolbar no-print">
+  <a th:href="@{/scans/{id}(id=${job.id})}">← 결과 화면으로</a>
+  <span class="toolbar-actions">
+    <button type="button" onclick="window.print()">인쇄</button>
+    <a class="primary" th:href="@{/scans/{id}/report.pdf(id=${job.id})}">PDF 받기</a>
+  </span>
+</div>
+
+<main class="sheet">
+
+  <!-- 표지 -->
+  <header class="cover">
+    <p class="brand">WebOps <span>가칭</span></p>
+    <h1>웹사이트 품질 검사 보고서</h1>
+    <p class="cover-url" th:text="${target}">https://www.example.com</p>
+    <table class="meta">
+      <tr><th scope="row">검사 일시</th><td th:text="${#temporals.format(job.createdAt, 'yyyy년 M월 d일 HH:mm')}">2026년 11월 17일 14:20</td></tr>
+      <tr><th scope="row">검사 범위</th>
+        <td th:text="${view.multiPage} ? '웹사이트 전체 점검 · 페이지 ' + ${#lists.size(view.pages)} + '개 · 게시판 글 ' + ${job.postsLabel} : ${job.scope.label}">메인 페이지만</td></tr>
+      <tr><th scope="row">검사 내용</th>
+        <td>접속 · 파일 · 데이터 불러오기 · 화면 동작 · 휴대폰 화면 · 링크 · 이미지(끝까지 스크롤) · 보안 연결 · 접근성<th:block th:if="${page?.scores != null}"> · 로딩 속도 · 검색 노출</th:block></td></tr>
+      <tr><th scope="row">소요 시간</th><td th:text="${#numbers.formatDecimal(view.report.durationMs / 1000.0, 1, 1)} + '초'">9.2초</td></tr>
+      <tr><th scope="row">검사 번호</th><td th:text="${job.id}">J-…</td></tr>
+    </table>
+  </header>
+
+  <!-- 1. 요약 -->
+  <section class="block">
+    <h2>검사 결과 요약</h2>
+    <div class="stats">
+      <div class="stat" th:if="${view.multiPage}">
+        <span class="stat-label">검사한 페이지</span>
+        <strong th:text="${#lists.size(view.pages)} + '개'">20개</strong>
+      </div>
+      <div class="stat">
+        <span class="stat-label">페이지 접속</span>
+        <strong th:classappend="${view.accessOk} ? 'ok' : 'bad'" th:text="${view.accessLabel}">정상</strong>
+      </div>
+      <div class="stat">
+        <span class="stat-label">휴대폰 화면</span>
+        <strong th:classappend="${view.mobileOk} ? 'ok' : 'bad'" th:text="${view.mobileLabel}">정상</strong>
+      </div>
+      <div class="stat">
+        <span class="stat-label">로딩 속도 · 검색 노출</span>
+        <strong th:text="${page?.scores != null} ? (${page.scores.performance ?: '-'} + ' · ' + ${page.scores.seo ?: '-'}) : '측정 안 함'">90 · 80</strong>
+      </div>
+      <div class="stat strong">
+        <span class="stat-label">발견된 문제</span>
+        <strong th:text="${summary.total} + '건'">10건</strong>
+      </div>
+      <div class="stat">
+        <span class="stat-label">직접 확인 필요</span>
+        <strong th:text="${summary.manualCheck} + '건'">0건</strong>
+      </div>
+    </div>
+    <p class="sev-line">
+      심각도별:
+      <span class="sev sev-critical" th:text="'심각 ' + ${summary.bySeverity['CRITICAL']} + '건'">심각 0건</span>
+      <span class="sev sev-high" th:text="'높음 ' + ${summary.bySeverity['HIGH']} + '건'">높음 0건</span>
+      <span class="sev sev-medium" th:text="'보통 ' + ${summary.bySeverity['MEDIUM']} + '건'">보통 0건</span>
+      <span class="sev sev-low" th:text="'낮음 ' + ${summary.bySeverity['LOW']} + '건'">낮음 0건</span>
+    </p>
+    <!-- 지난 검사와 비교 -->
+    <div class="compare-box" th:if="${view.compared}" th:with="c=${view.comparison}">
+      <strong th:text="'지난 검사(' + ${#temporals.format(c.previousAt, 'yyyy-MM-dd HH:mm')} + ')와 비교'">지난 검사와 비교</strong>
+      <span class="ok" th:text="'해결 ' + ${c.resolvedCount} + '건'">해결 12건</span>
+      <span class="bad" th:text="'새로 생김 ' + ${c.newCount} + '건'">새로 생김 3건</span>
+      <span th:text="'그대로 ' + ${c.keptCount} + '건'">그대로 20건</span>
+      <span th:if="${c.scoreDelta != null}"
+            th:text="'품질 점수 ' + ${c.previousScore} + '점 → ' + ${c.currentScore} + '점'">품질 점수 80점 → 85점</span>
+    </div>
+
+    <h3>검사 항목별 결과</h3>
+    <table class="table">
+      <thead><tr><th scope="col">항목</th><th scope="col">무엇을 봤나요</th><th scope="col">결과</th><th scope="col">참고</th></tr></thead>
+      <tbody>
+        <tr th:each="c : ${view.checks}">
+          <th scope="row" th:text="${c.label}">접근성</th>
+          <td th:text="${c.what}">설명</td>
+          <td class="nowrap" th:classappend="${!c.measured} ? 'muted' : (${c.count > 0} ? 'bad' : 'ok')" th:text="${c.status}">이상 없음</td>
+          <td class="muted" th:text="${c.note}">메모</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 2. 페이지별 점수표 (사이트 전체 검사) -->
+  <section class="block" th:if="${view.multiPage}">
+    <h2>페이지별 점수표</h2>
+    <table class="table">
+      <thead>
+        <tr><th scope="col" class="c">#</th><th scope="col">페이지</th><th scope="col" class="c">점수</th>
+          <th scope="col" class="c">심각</th><th scope="col" class="c">높음</th><th scope="col" class="c">보통</th><th scope="col" class="c">낮음</th></tr>
+      </thead>
+      <tbody>
+        <tr th:each="p : ${view.pages}">
+          <td class="c" th:text="${p.index}">1</td>
+          <td><strong th:text="${p.displayTitle}">제목</strong><br><span class="muted small" th:text="${p.path}">/path</span></td>
+          <td class="c nowrap"><span class="grade" th:classappend="${'grade-' + p.grade}" th:text="${p.score != null} ? ${p.score} + '점 ' + ${p.gradeLabel} : ${p.gradeLabel}">92점 양호</span></td>
+          <th:block th:if="${p.opened}">
+            <td class="c" th:text="${p.bySeverity['CRITICAL']}">0</td>
+            <td class="c" th:text="${p.bySeverity['HIGH']}">0</td>
+            <td class="c" th:text="${p.bySeverity['MEDIUM']}">0</td>
+            <td class="c" th:text="${p.bySeverity['LOW']}">0</td>
+          </th:block>
+          <td colspan="4" class="c muted" th:unless="${p.opened}" th:text="${p.httpStatus != null} ? '응답 코드 ' + ${p.httpStatus} : '접속 안 됨'">응답 코드 404</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="note" th:text="'점수는 WebOps가 정한 계산식입니다. ' + ${view.scoreRule} + ' 80점 이상 양호 · 50~79점 주의 · 50점 미만 위험. Lighthouse 점수와는 다릅니다.'">점수 계산</p>
+  </section>
+
+  <!-- 로딩 속도 (측정했을 때) -->
+  <section class="block" th:unless="${#lists.isEmpty(view.metrics)}">
+    <h2>로딩 속도 <span class="sub" th:text="${view.multiPage} ? 'PC 화면 · 첫 페이지 기준' : 'PC 화면 기준'">PC 화면 기준</span></h2>
+    <table class="table">
+      <thead><tr><th scope="col">지표</th><th scope="col">측정값</th><th scope="col">평가</th><th scope="col">좋음 기준</th><th scope="col">보통 기준</th></tr></thead>
+      <tbody>
+        <tr th:each="m : ${view.metrics}">
+          <th scope="row"><span th:text="${m.label}">첫 화면</span><br><span class="muted small" th:text="${m.what}">설명</span></th>
+          <td class="nowrap"><strong th:text="${m.value}">1.3초</strong></td>
+          <td class="nowrap"><span class="rating" th:classappend="${'rating-' + #strings.toLowerCase(m.rating)}" th:text="${m.ratingLabel}">좋음</span></td>
+          <td class="nowrap" th:text="${m.goodLabel}">0.9초</td>
+          <td class="nowrap" th:text="${m.poorLabel}">1.6초</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="note">기준선은 Lighthouse의 PC 평가 기준입니다. 실제 웹사이트 측정 자료(HTTP Archive)를 바탕으로 정해졌으며, 평균값이 아니라 평가 기준입니다.</p>
+  </section>
+
+  <!-- 개선 방안 -->
+  <section class="block" th:unless="${#lists.isEmpty(view.plan)}">
+    <h2>개선 방안 <span class="sub">급한 순서</span></h2>
+    <table class="table">
+      <thead><tr><th scope="col" class="c">순서</th><th scope="col" class="c">심각도</th><th scope="col">할 일</th><th scope="col">분류</th><th scope="col" class="c">곳</th></tr></thead>
+      <tbody>
+        <tr th:each="p : ${view.plan}">
+          <td class="c" th:text="${p.rank}">1</td>
+          <td class="c"><span class="badge" th:classappend="${'sev-' + #strings.toLowerCase(p.severity)}" th:text="${p.severityLabel}">심각</span></td>
+          <td th:text="${p.action}">버튼에 이름 넣기</td>
+          <td class="nowrap" th:text="${p.categoryLabel}">접근성</td>
+          <td class="c" th:text="${p.count}">3</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 문제 상세: 원인 · 해결 방법 · 추천 개선 방안 · 위치 캡처 -->
+  <section class="block details" th:unless="${#lists.isEmpty(view.plan)}">
+    <h2>문제 상세</h2>
+    <article class="issue" th:each="g : ${view.groups}" th:unless="${g.manual}">
+      <h3>
+        <span class="badge" th:classappend="${'sev-' + #strings.toLowerCase(g.severity)}" th:text="${g.severityLabel}">심각</span>
+        <span th:text="${g.title}">이미지에 설명 글이 없음</span>
+      </h3>
+      <p class="issue-meta">
+        <span th:text="${g.categoryLabel}">접근성</span> ·
+        <span th:text="${view.multiPage} ? ${g.count} + '곳 · 페이지 ' + ${g.pageCount} + '개' : ${g.count} + '곳'">3곳</span> ·
+        검사 규칙 <code th:text="${g.ruleId}">image-alt</code>
+      </p>
+      <!-- 접근성: 지키지 않은 지침 항목 -->
+      <p class="kwcag-line" th:if="${view.guideline(g) != null}" th:with="gl=${view.guideline(g)}">
+        <b>지키지 않은 접근성 지침</b>
+        <span th:if="${gl.hasKwcag}" th:text="'KWCAG 2.2 · ' + ${gl.kwcagCode} + ' ' + ${gl.kwcagName} + ' (' + ${gl.principle} + ')'">KWCAG 2.2 · 1.1.1 적절한 대체 텍스트 제공</span>
+        <span class="muted" th:text="'WCAG 2.2 · ' + ${gl.wcagCode} + ' ' + ${gl.wcagName} + ' (' + ${gl.level} + '등급)'">WCAG</span>
+      </p>
+      <dl class="guide">
+        <div th:if="${g.why}"><dt>원인</dt><dd th:text="${g.why}">설명</dd></div>
+        <div class="fix"><dt>해결 방법</dt><dd th:text="${g.fix}">고치는 방법</dd></div>
+      </dl>
+      <div class="example" th:if="${g.example}">
+        <p class="example-title">추천 개선 방안</p>
+        <div class="example-cols" th:classappend="${g.exampleBefore == null} ? 'single'">
+          <div class="ex-col bad" th:if="${g.exampleBefore}">
+            <p class="ex-label">고치기 전</p>
+            <pre th:text="${g.exampleBefore}">before</pre>
+          </div>
+          <div class="ex-col good">
+            <p class="ex-label" th:text="${g.exampleBefore != null} ? '고친 후' : '예시 코드'">고친 후</p>
+            <pre th:text="${g.exampleAfter}">after</pre>
+          </div>
+        </div>
+      </div>
+      <!-- 발견된 곳: 앞의 3곳만 (캡처가 있으면 그림으로) -->
+      <div class="found">
+        <p class="found-title">발견된 곳 <span class="muted" th:if="${g.count > 3}" th:text="'(앞의 3곳 · 전체 ' + ${g.count} + '곳은 결과 화면에서 확인)'">(앞의 3곳)</span></p>
+        <div class="found-item" th:each="f, st : ${g.items}" th:if="${st.index < 3}">
+          <p class="found-loc">
+            <b th:text="${st.count} + '.'">1.</b>
+            <span th:if="${view.multiPage and !f.shared}" th:text="'페이지 ' + ${view.pathOf(f.pageUrl)}">페이지 /path</span>
+            <span th:if="${f.shared}" class="shared" th:text="'공통 영역 · 페이지 ' + ${#lists.size(f.pageList)} + '개 (1건으로 셈)'">공통 영역</span>
+            <span th:if="${f.target}" class="muted" th:text="${f.target}">https://…</span>
+            <code th:if="${f.selector != null and f.screenshotName == null}" th:text="${f.selector}">img</code>
+            <span th:if="${f.selector == null and f.target == null}" class="muted">페이지 전체</span>
+          </p>
+          <figure th:if="${f.screenshotName}">
+            <img th:src="@{/scans/{id}/shots/{n}(id=${job.id},n=${f.screenshotName})}" alt="문제 위치 화면 캡처 (빨간 상자)">
+            <figcaption th:text="(${f.category == 'MOBILE'} ? '휴대폰 화면' : 'PC 화면') + ' · 빨간 상자가 문제 위치'">PC 화면</figcaption>
+          </figure>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- 직접 확인 필요 -->
+  <section class="block" th:if="${view.manualCount > 0}">
+    <h2>직접 확인이 필요한 항목</h2>
+    <p class="note">프로그램이 자동으로 판단하지 못한 항목입니다. 화면에서 직접 확인해 주세요.</p>
+    <ul class="manual-list">
+      <li th:each="g : ${view.groups}" th:if="${g.manual}">
+        <span th:text="${g.title}">항목</span> <span class="muted" th:text="'(' + ${g.count} + '곳)'">(2곳)</span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="block warnings" th:unless="${#lists.isEmpty(view.report.warnings)}">
+    <h2>검사하면서 확인하지 못한 부분</h2>
+    <ul><li th:each="w : ${view.report.warnings}" th:text="${w}">경고</li></ul>
+  </section>
+
+  <p class="disclaimer">
+    자동 검사 결과입니다. 웹 접근성 인증이나 법적 기준 충족을 보장하지 않습니다.
+    '직접 확인 필요' 항목은 프로그램이 판단하지 못한 것이므로 화면에서 직접 확인해 주세요.
+    로그인·검색·글쓰기처럼 버튼을 눌러야 하는 기능은 아직 검사하지 않습니다.
+  </p>
+</main>
+</body>
+</html>

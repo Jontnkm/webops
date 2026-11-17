@@ -4,6 +4,8 @@
 //  - 페이지가 따로 부르는 데이터 요청(API)이 실패한 경우
 //  - 스크립트 오류, 브라우저 콘솔 오류
 //  - https 페이지에서 http 파일을 부르는 경우(혼합 콘텐츠)
+// 화면이 뜬 뒤 끝까지 스크롤해서, 늦게 불러오는 이미지(lazy 로딩)의 문제까지 잡는다.
+import { autoScroll } from './scroll.js';
 
 // 화면을 만드는 데 쓰이는 파일 종류
 const RESOURCE_TYPES = new Set(['stylesheet', 'script', 'font', 'media', 'other']);
@@ -13,15 +15,16 @@ const API_TYPES = new Set(['xhr', 'fetch']);
 /**
  * @param {import('playwright').Page} page
  * @param {string} url
- * @param {{ timeoutMs?: number }} opts
+ * @param {{ timeoutMs?: number, scroll?: boolean }} opts
  */
-export async function loadPage(page, url, { timeoutMs = 30000 } = {}) {
+export async function loadPage(page, url, { timeoutMs = 30000, scroll = true } = {}) {
   const imageErrors = new Map(); // 이미지 주소 → 실패 이유
   const failedResources = new Map(); // 파일 주소 → { type, reason }
   const failedApis = new Map(); // 요청 → { method, reason }
   const insecureUrls = new Set(); // 페이지가 부른 http:// 파일
   const jsErrors = [];
   const consoleErrors = new Map(); // 메시지 → { count, source }
+  let requestCount = 0;
 
   const recordFailure = (req, reason) => {
     const type = req.resourceType();
@@ -32,6 +35,7 @@ export async function loadPage(page, url, { timeoutMs = 30000 } = {}) {
   };
 
   page.on('request', (req) => {
+    requestCount++;
     if (req.resourceType() !== 'document' && req.url().startsWith('http://')) insecureUrls.add(req.url());
   });
   page.on('response', (res) => {
@@ -57,6 +61,17 @@ export async function loadPage(page, url, { timeoutMs = 30000 } = {}) {
   const response = await page.goto(url, { waitUntil: 'load', timeout: timeoutMs });
   // 늦게 뜨는 리소스를 조금 더 기다림 (끝까지 안 끝나는 사이트도 있으므로 짧게)
   await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
+
+  // 끝까지 내려가며 늦게 뜨는 이미지·내용을 불러온다 (그동안 생긴 오류도 위 기록에 함께 쌓임)
+  let scrollInfo = null;
+  if (scroll) {
+    const before = requestCount;
+    try {
+      scrollInfo = { ...(await autoScroll(page)), extraRequests: requestCount - before };
+    } catch {
+      scrollInfo = null; // 스크롤 중 페이지가 바뀌는 등 실패해도 검사는 계속
+    }
+  }
 
   const collected = await page.evaluate(() => {
     // 요소를 다시 찾을 수 있는 짧은 CSS 경로 (id가 있으면 거기서 멈춤)
@@ -117,6 +132,7 @@ export async function loadPage(page, url, { timeoutMs = 30000 } = {}) {
     finalUrl,
     httpStatus: response ? response.status() : null,
     title: collected.title,
+    scroll: scrollInfo,
     links: collected.links,
     imageCount: collected.images.length,
     brokenImages,

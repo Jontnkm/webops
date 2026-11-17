@@ -20,40 +20,118 @@
                th:attr="aria-invalid=${error != null}, aria-describedby=${error != null ? 'url-help url-error' : 'url-help'}">
         <button type="submit" class="btn btn-primary">검사 시작</button>
       </div>
-      <p id="url-help" class="help">www.로 시작하는 주소만 넣어도 됩니다. 입력한 페이지 1개를 검사합니다.</p>
+      <p id="url-help" class="help">www.로 시작하는 주소만 넣어도 됩니다.</p>
       <p id="url-error" class="form-error" role="alert" th:if="${error}" th:text="${error}">오류 메시지</p>
+
+      <!-- 검사 범위: 메인 페이지만 / 입력한 현재 페이지 / 웹사이트 전체 점검 -->
+      <fieldset class="scope" th:with="sel=${scope ?: 'MAIN'}">
+        <legend class="form-label">검사 범위</legend>
+        <div class="scope-options">
+          <label class="scope-option">
+            <input type="radio" name="scope" value="MAIN" th:checked="${sel == 'MAIN'}">
+            <span><strong>메인 페이지만</strong><span class="scope-desc">어떤 주소를 넣어도 그 사이트의 첫 화면만 · 보통 10~20초</span></span>
+          </label>
+          <label class="scope-option">
+            <input type="radio" name="scope" value="PAGE" th:checked="${sel == 'PAGE'}">
+            <span><strong>입력한 현재 페이지</strong><span class="scope-desc">넣은 주소의 그 페이지만 · 보통 10~20초</span></span>
+          </label>
+          <label class="scope-option">
+            <input type="radio" name="scope" value="SITE" th:checked="${sel == 'SITE'}">
+            <span><strong>웹사이트 전체 점검</strong><span class="scope-desc">같은 사이트 링크를 끝까지 따라가며 · 페이지별 점수표</span></span>
+          </label>
+        </div>
+        <p class="help" th:text="'웹사이트 전체 점검은 페이지 수만큼 오래 걸립니다 (큰 사이트는 수십 분). 너무 오래 걸리지 않게 최대 ' + ${maxPages} + '페이지까지 봅니다. 모든 페이지를 끝까지 내려 보며 늦게 뜨는 이미지까지 확인합니다.'">안내</p>
+
+        <!-- 상세 옵션 (웹사이트 전체 점검에만 적용): 게시판 글을 모두 볼지, 최신 1개만 볼지 -->
+        <details class="adv" th:open="${posts == 'ALL'}">
+          <summary>상세 옵션</summary>
+          <fieldset class="adv-group">
+            <legend>게시판 글 점검 <span class="muted">(웹사이트 전체 점검에만 적용)</span></legend>
+            <label class="adv-option">
+              <input type="radio" name="posts" value="LATEST" th:checked="${posts != 'ALL'}">
+              <span><strong>최신 게시물 1개만</strong> <span class="muted">(기본)</span>
+                <span class="scope-desc">게시글은 내용만 다르고 화면 모양이 같아서, 게시판마다 가장 위(최신) 글 하나만 검사합니다</span></span>
+            </label>
+            <label class="adv-option">
+              <input type="radio" name="posts" value="ALL" th:checked="${posts == 'ALL'}">
+              <span><strong>모든 게시물</strong>
+                <span class="scope-desc" th:text="'게시글을 하나하나 모두 검사합니다. 글이 많으면 오래 걸리고, 최대 ' + ${maxPages} + '페이지 안에서만 검사합니다'">모두 검사</span></span>
+            </label>
+          </fieldset>
+        </details>
+      </fieldset>
 
       <label class="check">
         <input type="checkbox" name="lighthouse" value="true" th:checked="${lighthouse}">
-        <span>로딩 속도 · 검색 노출 점수도 측정 <span class="muted">(20~60초 더 걸림)</span></span>
+        <span>로딩 속도 · 검색 노출 점수도 측정 <span class="muted">(첫 페이지만 · 20~60초 더 걸림)</span></span>
       </label>
     </form>
   </section>
 
-  <section class="recent" th:unless="${#lists.isEmpty(recent)}">
-    <h2>최근 검사</h2>
-    <div class="table-wrap">
-      <table class="table">
-        <caption class="sr-only">최근 검사 목록</caption>
-        <thead>
-          <tr>
-            <th scope="col">시각</th>
-            <th scope="col">주소</th>
-            <th scope="col">상태</th>
-            <th scope="col" class="num">발견된 문제</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr th:each="j : ${recent}">
-            <td class="nowrap" th:text="${#temporals.format(j.createdAt, 'MM-dd HH:mm:ss')}">11-16 14:20:00</td>
-            <td class="url-cell"><a th:href="@{/scans/{id}(id=${j.id})}" th:text="${j.url}">https://www.example.com</a></td>
-            <td><span class="status" th:classappend="${'status-' + #strings.toLowerCase(j.status.name())}" th:text="${j.status.label}">완료</span></td>
-            <td class="num" th:text="${j.report != null ? j.report.summary.total + '건' : '-'}">12건</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="muted small">검사 기록은 프로그램을 다시 켜면 사라집니다 (기록 저장 기능은 다음 단계).</p>
+  <!-- 최근 검사: 카드 한 줄 4개 × 3줄 = 12개씩, 더 있으면 아래 페이지 번호 -->
+  <section class="recent" id="recent" th:unless="${#lists.isEmpty(recent)}" aria-labelledby="recent-title">
+    <h2 id="recent-title">최근 검사 <span class="muted small" th:text="'전체 ' + ${recentTotal} + '건'">전체 30건</span></h2>
+    <p class="notice" role="status" th:if="${recentNotice}" th:text="${recentNotice}">삭제했습니다.</p>
+    <p class="form-error" role="alert" th:if="${recentError}" th:text="${recentError}">오류</p>
+    <ul class="recent-grid">
+      <li th:each="c : ${recent}" th:with="j=${c.job}">
+        <a class="recent-card" th:href="@{/scans/{id}(id=${j.id})}" th:title="${j.url}">
+          <span class="rc-head">
+            <!-- 구글 프로필처럼: 사이트 주소의 첫 알파벳 -->
+            <span class="avatar" aria-hidden="true" th:style="'background:' + ${c.color}" th:text="${c.initial}">M</span>
+            <span class="rc-site">
+              <strong class="rc-host" th:text="${c.host}">mois.go.kr</strong>
+              <span class="rc-path" th:text="${c.path ?: ' '}">/main.do</span>
+            </span>
+            <span class="status" th:classappend="${'status-' + #strings.toLowerCase(j.status.name())}" th:text="${j.status.label}">완료</span>
+          </span>
+          <span class="rc-stats">
+            <span class="rc-stat">
+              <span class="rc-label">품질 점수</span>
+              <span class="rc-value" th:classappend="${'grade-text-' + c.grade}">
+                <strong th:text="${j.qualityScore ?: '-'}">85</strong><small th:if="${j.qualityScore != null}">점</small>
+              </span>
+            </span>
+            <span class="rc-stat">
+              <span class="rc-label">발견된 문제</span>
+              <span class="rc-value">
+                <strong th:text="${j.issueCount ?: '-'}">12</strong><small th:if="${j.issueCount != null}">건</small>
+              </span>
+            </span>
+          </span>
+          <span class="rc-foot">
+            <span class="rc-time" th:text="${#temporals.format(j.createdAt, 'yyyy-MM-dd HH:mm')}">2026-11-17 14:20</span>
+            <span class="rc-tags">
+              <span class="rc-tag" th:text="${j.siteScan} ? '전체 점검' : ${j.scope.label}">메인 페이지만</span>
+              <span class="tag-scheduled" th:if="${j.scheduled}">정기</span>
+            </span>
+          </span>
+        </a>
+        <!-- 삭제: 링크 안에 버튼을 넣을 수 없어 카드 오른쪽 아래에 따로 둔다. 검사 중이면 지울 수 없음 -->
+        <form class="rc-delete" th:action="@{/scans/{id}/delete(id=${j.id})}" method="post"
+              th:unless="${j.status.name() == 'RUNNING' or j.status.name() == 'QUEUED'}"
+              onsubmit="return confirm('이 검사 기록을 삭제할까요?\n결과 · 위치 캡처 · PDF가 함께 지워지며 되돌릴 수 없습니다.');">
+          <input type="hidden" name="page" th:value="${recentPage}">
+          <button type="submit" class="rc-delete-btn"
+                  th:attr="aria-label=${c.host} + ' ' + ${#temporals.format(j.createdAt, 'MM월 dd일 HH:mm')} + ' 검사 기록 삭제'">삭제</button>
+        </form>
+      </li>
+    </ul>
+
+    <!-- 페이지 번호 (12개를 넘을 때만) -->
+    <nav class="pager" th:if="${recentPages > 1}" aria-label="최근 검사 페이지">
+      <a class="pager-btn" th:if="${recentPage > 1}" th:href="@{/(page=${recentPage - 1})} + '#recent'">‹ 이전</a>
+      <span class="pager-btn disabled" th:unless="${recentPage > 1}" aria-hidden="true">‹ 이전</span>
+      <th:block th:each="n : ${recentNumbers}">
+        <a class="pager-num" th:if="${n != recentPage}" th:href="@{/(page=${n})} + '#recent'" th:text="${n}"
+           th:attr="aria-label=${n} + '쪽'">2</a>
+        <span class="pager-num current" th:if="${n == recentPage}" aria-current="page" th:text="${n}">1</span>
+      </th:block>
+      <a class="pager-btn" th:if="${recentPage < recentPages}" th:href="@{/(page=${recentPage + 1})} + '#recent'">다음 ›</a>
+      <span class="pager-btn disabled" th:unless="${recentPage < recentPages}" aria-hidden="true">다음 ›</span>
+    </nav>
+
+    <p class="muted small">검사 기록은 저장되어 프로그램을 다시 켜도 남습니다. 같은 주소를 다시 검사하면 지난 검사와 비교해 보여 줍니다.</p>
   </section>
 </main>
 </body>

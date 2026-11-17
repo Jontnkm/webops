@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head(${site.name} + ' 품질 추이')}"></head>
+<body>
+<a th:replace="~{fragments/common :: skip}"></a>
+<header th:replace="~{fragments/common :: header}"></header>
+
+<main id="main" class="container">
+  <p class="crumb"><a th:href="@{/sites}">정기 검사</a> ›</p>
+
+  <!-- 사이트 머리: 이름 · 주소 · 일정 + 지금 검사 / 멈춤 -->
+  <section class="site-head">
+    <div class="site-head-main">
+      <h1 th:text="${site.name}">기관 홈페이지</h1>
+      <p class="site-url" th:text="${site.baseUrl}">https://www.example.com</p>
+      <p class="site-meta">
+        <span class="tag-scheduled" th:classappend="${!site.scheduled} ? 'off'" th:text="${site.enabled} ? ${site.scheduleLabel} : '정기 검사 멈춤'">매일 9시</span>
+        <span th:text="${site.scope.label}">메인 페이지만</span>
+        <span th:if="${site.nextRunAt != null}" th:text="'다음 검사 ' + ${#temporals.format(site.nextRunAt, 'yyyy-MM-dd HH:mm')}">다음 검사</span>
+        <span th:text="${site.notifyEmail != null} ? '알림: ' + ${site.notifyEmail} : '알림 메일 없음'">알림</span>
+      </p>
+    </div>
+    <div class="site-head-actions">
+      <form th:action="@{/sites/{id}/run(id=${site.siteId})}" method="post">
+        <button type="submit" class="btn btn-primary">지금 검사</button>
+      </form>
+      <form th:action="@{/sites/{id}/toggle(id=${site.siteId})}" method="post" th:unless="${site.scheduleType == 'NONE'}">
+        <input type="hidden" name="enabled" th:value="${!site.enabled}">
+        <button type="submit" class="btn" th:text="${site.enabled} ? '정기 검사 멈춤' : '정기 검사 다시 시작'">정기 검사 멈춤</button>
+      </form>
+    </div>
+  </section>
+
+  <p class="notice" role="status" th:if="${notice}" th:text="${notice}">알림</p>
+  <p class="form-error" role="alert" th:if="${error}" th:text="${error}">오류</p>
+
+  <!-- 품질 추이: 측정값마다 그래프 하나 (축이 두 개인 그래프는 쓰지 않음) -->
+  <section class="trend" aria-labelledby="trend-title">
+    <h2 id="trend-title">품질 추이 <span class="muted small">끝난 검사 최근 30건 · 점을 누르면 그 검사 결과로 이동</span></h2>
+    <p class="empty" th:if="${trend.empty}">아직 끝난 검사가 없습니다. '지금 검사'를 누르거나 정기 검사 시각까지 기다려 주세요.</p>
+    <div class="trend-grid" th:unless="${trend.empty}">
+      <figure class="trend-chart" th:each="ch : ${trend.charts}">
+        <figcaption>
+          <span class="trend-title" th:text="${ch.title}">품질 점수</span>
+          <span class="trend-last" th:if="${ch.last != null}">최근 <strong th:text="${ch.last.value}">85점</strong></span>
+          <span class="trend-desc" th:text="${ch.desc}">설명</span>
+        </figcaption>
+        <div class="trend-plot" role="img"
+             th:attr="aria-label=${ch.title} + ' 추이: ' + ${#strings.listJoin(ch.points.![date + ' ' + value], ', ')}">
+          <!-- 가로 눈금선과 왼쪽 숫자 -->
+          <div class="trend-grid-line" th:each="t : ${ch.grid}" th:style="'top:' + ${t.pos} + '%'">
+            <span th:text="${t.label}">50</span>
+          </div>
+          <!-- 기준선 (품질 점수: 양호 80 · 주의 50) -->
+          <div class="trend-ref" th:each="t : ${ch.refs}" th:style="'top:' + ${t.pos} + '%'">
+            <span th:text="${t.label}">양호 80</span>
+          </div>
+          <svg class="trend-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <path th:attr="d=${ch.path}" class="trend-line"/>
+          </svg>
+          <!-- 점: 누르면 그 검사 결과, 올리면 날짜·값 -->
+          <a class="trend-pt" th:each="p : ${ch.points}" th:href="@{/scans/{id}(id=${p.jobId})}"
+             th:style="'left:' + ${p.x} + '%;top:' + ${p.y} + '%'"
+             th:attr="aria-label=${p.tooltip} + ' 검사 결과 보기', data-tip=${p.tooltip}"></a>
+          <!-- 아래 날짜 -->
+          <span class="trend-x" th:each="t : ${ch.xLabels}" th:style="'left:' + ${t.pos} + '%'" th:text="${t.label}">11-17</span>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 검사 기록 (그래프의 표 보기) -->
+  <section class="history" aria-labelledby="history-title" th:unless="${#lists.isEmpty(trend.rows)}">
+    <h2 id="history-title">검사 기록</h2>
+    <div class="table-wrap">
+      <table class="table">
+        <caption class="sr-only">검사 기록 (최신 순)</caption>
+        <thead>
+          <tr>
+            <th scope="col">시각</th>
+            <th scope="col" class="nowrap">종류</th>
+            <th scope="col">상태</th>
+            <th scope="col" class="num">품질 점수</th>
+            <th scope="col" class="num">발견된 문제</th>
+            <th scope="col"><span class="sr-only">결과</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="r : ${trend.rows}" th:with="j=${r.job}">
+            <td class="nowrap" th:text="${#temporals.format(j.createdAt, 'yyyy-MM-dd HH:mm')}">2026-11-17 09:00</td>
+            <td class="nowrap" th:text="${j.triggerType == 'SCHEDULED'} ? '정기' : '직접'">정기</td>
+            <td>
+              <span class="status" th:classappend="${j.siteDown and j.status == 'DONE'} ? 'status-failed' : ${'status-' + #strings.toLowerCase(j.status)}"
+                    th:text="${j.status == 'DONE'} ? (${j.siteDown} ? '접속 안 됨' : '완료') : (${j.status == 'FAILED'} ? '실패' : '검사 중')">완료</span>
+            </td>
+            <td class="num">
+              <span th:text="${j.qualityScore != null ? j.qualityScore + '점' : '-'}">85점</span>
+              <span class="delta" th:if="${r.scoreDelta != null and r.scoreDelta != 0}"
+                    th:classappend="${r.scoreDelta > 0} ? 'up' : 'down'"
+                    th:text="${r.scoreDelta > 0} ? '+' + ${r.scoreDelta} : ${r.scoreDelta}">+5</span>
+            </td>
+            <td class="num">
+              <span th:text="${j.issueCount != null ? j.issueCount + '건' : '-'}">12건</span>
+              <!-- 문제 수는 줄어야 좋은 것이므로 줄면 초록(up), 늘면 빨강(down) -->
+              <span class="delta" th:if="${r.issueDelta != null and r.issueDelta != 0}"
+                    th:classappend="${r.issueDelta < 0} ? 'up' : 'down'"
+                    th:text="${r.issueDelta > 0} ? '+' + ${r.issueDelta} : ${r.issueDelta}">-3</span>
+            </td>
+            <td class="nowrap"><a th:href="@{/scans/{id}(id=${j.jobId})}">결과 보기</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 알림 기록 -->
+  <section class="alerts" aria-labelledby="alerts-title">
+    <h2 id="alerts-title">알림 기록 <span class="muted small">최근 20건</span></h2>
+    <p class="empty small" th:if="${#lists.isEmpty(alerts)}"
+       th:text="${site.notifyEmail != null} ? '아직 보낸 알림이 없습니다.' : '알림 받을 메일이 없어 알림을 보내지 않습니다. 아래 설정에서 메일을 넣어 주세요.'">알림 없음</p>
+    <ul class="alert-list" th:unless="${#lists.isEmpty(alerts)}">
+      <li th:each="a : ${alerts}">
+        <details>
+          <summary>
+            <span class="alert-status" th:classappend="${'st-' + #strings.toLowerCase(a.status)}" th:text="${a.statusLabel}">보냄</span>
+            <span class="alert-subject" th:text="${a.subject}">[WebOps] 접속 불가</span>
+            <span class="muted small nowrap" th:text="${#temporals.format(a.createdAt, 'MM-dd HH:mm')}">11-17 09:01</span>
+          </summary>
+          <p class="small muted" th:text="'받는 사람: ' + ${a.recipients}">받는 사람</p>
+          <p class="form-error small" th:if="${a.error}" th:text="${a.error}">오류</p>
+          <pre class="alert-body" th:text="${a.body}">본문</pre>
+        </details>
+      </li>
+    </ul>
+    <p class="small muted">메일 서버가 설정되지 않은 동안에는 메일을 보내지 않고 여기에만 기록합니다.</p>
+  </section>
+
+  <!-- 설정 바꾸기 -->
+  <section aria-labelledby="edit-title">
+    <h2 id="edit-title">설정 바꾸기</h2>
+    <form class="card site-form" th:action="@{/sites/{id}(id=${site.siteId})}" method="post">
+      <div th:replace="~{fragments/site-form :: fields(${formValues}, ${maxPages}, true)}"></div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">저장</button>
+      </div>
+    </form>
+    <form class="delete-form" th:action="@{/sites/{id}/delete(id=${site.siteId})}" method="post"
+          onsubmit="return confirm('이 사이트를 정기 검사 목록에서 지울까요? 지난 검사 기록은 남습니다.');">
+      <button type="submit" class="btn btn-danger">사이트 삭제</button>
+    </form>
+  </section>
+</main>
+
+<!-- 그래프 점에 마우스를 올리거나 키보드로 옮기면 날짜·값을 보여 준다 -->
+<div class="trend-tip" id="trend-tip" role="tooltip" hidden></div>
+<script>
+  (() => {
+    const tip = document.getElementById('trend-tip');
+    const show = (el) => {
+      tip.textContent = el.dataset.tip;
+      tip.hidden = false;
+      const r = el.getBoundingClientRect();
+      const w = tip.offsetWidth;
+      const left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), document.documentElement.clientWidth - w - 8);
+      tip.style.left = left + window.scrollX + 'px';
+      tip.style.top = r.top + window.scrollY - tip.offsetHeight - 8 + 'px';
+    };
+    const hide = () => { tip.hidden = true; };
+    for (const p of document.querySelectorAll('.trend-pt')) {
+      p.addEventListener('mouseenter', () => show(p));
+      p.addEventListener('focus', () => show(p));
+      p.addEventListener('mouseleave', hide);
+      p.addEventListener('blur', hide);
+    }
+  })();
+</script>
+<script th:replace="~{fragments/site-form :: script}"></script>
+</body>
+</html>

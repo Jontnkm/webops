@@ -1,5 +1,6 @@
 // 휴대폰 크기(가로 360px)로 페이지를 열어, 화면이 옆으로 밀리는지(가로 스크롤) 확인한다.
-// 밀리면 화면보다 넓은 요소 중 가장 바깥쪽 원인을 최대 5개까지 찾는다.
+// 밀리면 화면보다 넓은 요소 중 가장 바깥쪽 원인을 최대 5개까지 찾고, 휴대폰 화면 그대로 캡처한다.
+import { captureElements } from './shots.js';
 
 const MOBILE = {
   viewport: { width: 360, height: 740 },
@@ -13,8 +14,9 @@ const MOBILE = {
 /**
  * @param {import('playwright').Browser} browser
  * @param {string} url
+ * @param {{ timeoutMs?: number, shots?: { dir: string, urlPrefix: string, prefix: string } | null }} opts
  */
-export async function checkMobile(browser, url, { timeoutMs = 30000 } = {}) {
+export async function checkMobile(browser, url, { timeoutMs = 30000, shots = null } = {}) {
   const context = await browser.newContext(MOBILE);
   try {
     const page = await context.newPage();
@@ -65,7 +67,10 @@ export async function checkMobile(browser, url, { timeoutMs = 30000 } = {}) {
       return { viewportWidth, scrollWidth, offenders: found.map(({ el, ...rest }) => rest) };
     });
 
-    return { finalUrl: page.url(), ...result };
+    const captured = shots && result.offenders.length
+      ? await captureElements(page, result.offenders.map((o) => o.selector), { ...shots, max: 5 })
+      : {};
+    return { finalUrl: page.url(), ...result, shots: captured };
   } finally {
     await context.close();
   }

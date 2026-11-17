@@ -3,3 +3,4 @@ runner/output/
 server/target/
 .tools/
 *.log
+data/

@@ -13,10 +13,18 @@ AI WebOps(가칭) 로드맵 1단계. URL 하나를 실제 브라우저로 열어
 | 화면 동작 | Playwright | 처리되지 않은 스크립트 오류, 브라우저 콘솔 오류 |
 | 모바일 화면 | Playwright (가로 360px) | 화면이 옆으로 밀리는지, 원인 요소 |
 | 링크 | Node fetch (HEAD 실패 시 GET 재확인) | 깨진 링크, 연결 실패 |
-| 이미지 | Playwright | 불러오지 못한 이미지 (통계 수집용 img는 직접 확인으로 분리) |
+| 이미지 | Playwright (끝까지 스크롤) | 불러오지 못한 이미지. 페이지 끝까지 내려가 늦게 뜨는(lazy) 이미지까지 확인 (통계 수집용 img는 직접 확인으로 분리) |
 | 보안 연결 | Playwright | https 페이지에서 http 파일을 부르는 경우 |
 | 접근성 | axe-core (WCAG 2.2 A·AA, 한국어 설명) | 대체 텍스트, 명도 대비, 레이블, 버튼·링크 이름, lang 등 |
 | 로딩 속도·검색 노출 | Lighthouse (데스크톱 기준) | 점수, 주요 지표, 검색 노출 미흡 항목 |
+
+위치가 있는 문제(깨진 이미지·링크, 접근성, 휴대폰 밀림)는 해당 요소를 **빨간 상자로 표시한 화면 캡처**를 남긴다
+(`output/shots/<작업ID>/p<페이지번호>-<n>.jpg`, 휴대폰 화면은 `p<n>-m<n>.jpg`, 발견 항목의 `screenshot`에 상대 경로).
+첫 페이지는 최대 30장, 사이트 전체 검사의 나머지 페이지는 페이지당 10장.
+
+`--pages n`을 주면 **사이트 전체 검사**: 같은 도메인 링크를 차례로 따라가 최대 n개 페이지를 검사한다.
+파일 내려받기(pdf·hwp 등)·로그아웃 같은 주소, 이미 깨진 링크로 확인된 주소는 열지 않는다. 같은 링크는 사이트 전체에서 한 번만 확인한다.
+로딩 속도·검색 노출은 첫 페이지만 측정한다. 리포트의 `pages[]`에 페이지마다 `summary`(심각도별 건수)가 들어간다.
 
 외부 사이트(통계·광고 등) 파일이나 데이터 요청 실패는 심각도를 '낮음'으로 둔다.
 버튼을 누르거나 입력해야 하는 기능(로그인·검색·글쓰기)은 아직 검사하지 않는다.
@@ -41,13 +49,22 @@ node src/scan.js https://www.example.com
 # 빠르게 (성능·SEO 제외)
 node src/scan.js www.example.com --no-lighthouse
 
-# 링크 확인 개수 조정 (기본 100개)
+# 링크 확인 개수 조정 (기본 300개)
 node src/scan.js https://www.example.com --max-links 30
+
+# 사이트 전체 검사 (같은 사이트 링크를 따라 최대 20페이지)
+node src/scan.js www.example.com --pages 20 --no-lighthouse
+
+# 스크롤 · 위치 캡처 끄기
+node src/scan.js www.example.com --no-scroll --no-shots
+
+# 서버의 인쇄용 보고서 화면을 PDF로 (서버가 부르는 용도, 127.0.0.1만)
+node src/pdf.js http://127.0.0.1:8080/scans/<작업ID>/print output/report.pdf
 ```
 
 결과는 `output/scan-<작업ID>.json`에 저장되고, 터미널에는 규칙별 요약이 나온다.
 
-종료 코드: `0` 검사 완료 · `1` 실행 오류 · `2` 페이지 접속 불가
+종료 코드: `0` 검사 완료 · `1` 실행 오류 · `2` (첫) 페이지 접속 불가
 
 ## 1단계 완료 기준 확인
 

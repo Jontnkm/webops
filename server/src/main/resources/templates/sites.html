@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('정기 검사')}"></head>
+<body>
+<a th:replace="~{fragments/common :: skip}"></a>
+<header th:replace="~{fragments/common :: header}"></header>
+
+<main id="main" class="container">
+  <section class="hero">
+    <h1>정기 검사</h1>
+    <p class="lead">사이트를 등록해 두면 매일 또는 매주 정해진 시각에 자동으로 검사하고, 점수 변화를 그래프로 보여 줍니다.
+      접속이 안 되거나 깨진 링크가 새로 생기면 메일로 알려 드립니다.</p>
+  </section>
+
+  <p class="notice" role="status" th:if="${notice}" th:text="${notice}">알림</p>
+
+  <!-- 등록된 사이트 -->
+  <section class="site-list-wrap" th:unless="${#lists.isEmpty(sites)}" aria-labelledby="list-title">
+    <h2 id="list-title">등록된 사이트 <span class="zone-count" th:text="${#lists.size(sites)}">2</span></h2>
+    <ul class="site-list">
+      <li th:each="s : ${sites}" th:with="j=${latest[s.siteId]}">
+        <a class="site-card" th:href="@{/sites/{id}(id=${s.siteId})}">
+          <span class="site-score" th:with="sc=${j != null ? j.qualityScore : null}"
+                th:classappend="${sc == null} ? 'grade-none' : (${sc >= 80} ? 'grade-good' : (${sc >= 50} ? 'grade-mid' : 'grade-bad'))">
+            <strong th:text="${sc ?: '–'}">85</strong><span>최근 점수</span>
+          </span>
+          <span class="site-main">
+            <span class="site-name" th:text="${s.name}">기관 홈페이지</span>
+            <span class="site-url" th:text="${s.baseUrl}">https://www.example.com</span>
+            <span class="site-meta">
+              <span class="tag-scheduled" th:classappend="${!s.scheduled} ? 'off'" th:text="${s.enabled} ? ${s.scheduleLabel} : '멈춤'">매일 9시</span>
+              <span th:if="${s.nextRunAt != null}" th:text="'다음 검사 ' + ${#temporals.format(s.nextRunAt, 'MM-dd HH:mm')}">다음 검사 11-18 09:00</span>
+              <span th:if="${j != null}" th:text="'마지막 검사 ' + ${#temporals.format(j.createdAt, 'MM-dd HH:mm')} + (${j.status == 'RUNNING' or j.status == 'QUEUED'} ? ' (검사 중)' : '')">마지막 검사</span>
+              <span th:if="${s.notifyEmail != null}" class="muted">알림 메일 있음</span>
+            </span>
+          </span>
+          <span class="group-arrow" aria-hidden="true">›</span>
+        </a>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 새 사이트 등록 -->
+  <section aria-labelledby="new-title">
+    <h2 id="new-title">사이트 등록</h2>
+    <form class="card site-form" th:action="@{/sites}" method="post">
+      <p class="form-error" role="alert" th:if="${error}" th:text="${error}">오류</p>
+      <div th:replace="~{fragments/site-form :: fields(${form}, ${maxPages}, false)}"></div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">등록</button>
+      </div>
+    </form>
+  </section>
+</main>
+<script th:replace="~{fragments/site-form :: script}"></script>
+</body>
+</html>
