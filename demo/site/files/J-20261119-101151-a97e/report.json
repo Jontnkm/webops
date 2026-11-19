@@ -1,0 +1,375 @@
+{
+  "schemaVersion": "1.0",
+  "jobId": "J-20261119-101151-a97e",
+  "tool": {
+    "name": "webops-runner",
+    "version": "0.1.0",
+    "browser": "159.0.8154.6",
+    "axeCore": null,
+    "lighthouse": "13.6.0"
+  },
+  "startedAt": "2026-11-19T01:12:06.261Z",
+  "finishedAt": "2026-11-19T01:12:43.888Z",
+  "durationMs": 37627,
+  "scope": {
+    "maxPages": 300,
+    "pageCount": 5,
+    "linksChecked": 0,
+    "scrolled": false,
+    "remaining": 0,
+    "check": "perf",
+    "mobileUrl": null
+  },
+  "pages": [
+    {
+      "requestedUrl": "http://127.0.0.1:4173/broken.html",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 오류 페이지",
+      "scores": {
+        "performance": 100,
+        "seo": null
+      },
+      "metrics": {
+        "fcp": "0.3 초",
+        "lcp": "0.3 초",
+        "tbt": "0 밀리초",
+        "cls": "0",
+        "speedIndex": "0.3 초"
+      },
+      "metricDetails": [
+        {
+          "key": "fcp",
+          "displayValue": "0.3 초",
+          "numericValue": 260,
+          "rating": "GOOD"
+        },
+        {
+          "key": "lcp",
+          "displayValue": "0.3 초",
+          "numericValue": 260,
+          "rating": "GOOD"
+        },
+        {
+          "key": "tbt",
+          "displayValue": "0 밀리초",
+          "numericValue": 0,
+          "rating": "GOOD"
+        },
+        {
+          "key": "cls",
+          "displayValue": "0",
+          "numericValue": 0,
+          "rating": "GOOD"
+        },
+        {
+          "key": "speedIndex",
+          "displayValue": "0.3 초",
+          "numericValue": 260,
+          "rating": "GOOD"
+        }
+      ],
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 5,
+      "scroll": null,
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 0,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 0
+        },
+        "byCategory": {}
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/ok.html",
+      "pageUrl": "http://127.0.0.1:4173/ok.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 정상 페이지",
+      "scores": {
+        "performance": 100,
+        "seo": null
+      },
+      "metrics": {
+        "fcp": "0.2 초",
+        "lcp": "0.2 초",
+        "tbt": "0 밀리초",
+        "cls": "0",
+        "speedIndex": "0.2 초"
+      },
+      "metricDetails": [
+        {
+          "key": "fcp",
+          "displayValue": "0.2 초",
+          "numericValue": 195,
+          "rating": "GOOD"
+        },
+        {
+          "key": "lcp",
+          "displayValue": "0.2 초",
+          "numericValue": 195,
+          "rating": "GOOD"
+        },
+        {
+          "key": "tbt",
+          "displayValue": "0 밀리초",
+          "numericValue": 0,
+          "rating": "GOOD"
+        },
+        {
+          "key": "cls",
+          "displayValue": "0",
+          "numericValue": 0,
+          "rating": "GOOD"
+        },
+        {
+          "key": "speedIndex",
+          "displayValue": "0.2 초",
+          "numericValue": 195,
+          "rating": "GOOD"
+        }
+      ],
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 1,
+      "scroll": null,
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 0,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 0
+        },
+        "byCategory": {}
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/head-404.html",
+      "pageUrl": "http://127.0.0.1:4173/head-404.html",
+      "httpStatus": 200,
+      "title": "ok",
+      "scores": {
+        "performance": 100,
+        "seo": null
+      },
+      "metrics": {
+        "fcp": "0.2 초",
+        "lcp": "0.2 초",
+        "tbt": "0 밀리초",
+        "cls": "0",
+        "speedIndex": "0.2 초"
+      },
+      "metricDetails": [
+        {
+          "key": "fcp",
+          "displayValue": "0.2 초",
+          "numericValue": 191,
+          "rating": "GOOD"
+        },
+        {
+          "key": "lcp",
+          "displayValue": "0.2 초",
+          "numericValue": 191,
+          "rating": "GOOD"
+        },
+        {
+          "key": "tbt",
+          "displayValue": "0 밀리초",
+          "numericValue": 0,
+          "rating": "GOOD"
+        },
+        {
+          "key": "cls",
+          "displayValue": "0",
+          "numericValue": 0,
+          "rating": "GOOD"
+        },
+        {
+          "key": "speedIndex",
+          "displayValue": "0.2 초",
+          "numericValue": 191,
+          "rating": "GOOD"
+        }
+      ],
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 0,
+      "scroll": null,
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 0,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 0
+        },
+        "byCategory": {}
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/sub.html",
+      "pageUrl": "http://127.0.0.1:4173/sub.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 하위 페이지",
+      "scores": {
+        "performance": 100,
+        "seo": null
+      },
+      "metrics": {
+        "fcp": "0.2 초",
+        "lcp": "0.2 초",
+        "tbt": "0 밀리초",
+        "cls": "0",
+        "speedIndex": "0.2 초"
+      },
+      "metricDetails": [
+        {
+          "key": "fcp",
+          "displayValue": "0.2 초",
+          "numericValue": 195,
+          "rating": "GOOD"
+        },
+        {
+          "key": "lcp",
+          "displayValue": "0.2 초",
+          "numericValue": 195,
+          "rating": "GOOD"
+        },
+        {
+          "key": "tbt",
+          "displayValue": "0 밀리초",
+          "numericValue": 0,
+          "rating": "GOOD"
+        },
+        {
+          "key": "cls",
+          "displayValue": "0",
+          "numericValue": 0,
+          "rating": "GOOD"
+        },
+        {
+          "key": "speedIndex",
+          "displayValue": "0.2 초",
+          "numericValue": 195,
+          "rating": "GOOD"
+        }
+      ],
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 0,
+      "scroll": null,
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 0,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 0
+        },
+        "byCategory": {}
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/board.html?id=1",
+      "pageUrl": "http://127.0.0.1:4173/board.html?id=1",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 게시판 글",
+      "scores": {
+        "performance": 100,
+        "seo": null
+      },
+      "metrics": {
+        "fcp": "0.2 초",
+        "lcp": "0.2 초",
+        "tbt": "0 밀리초",
+        "cls": "0",
+        "speedIndex": "0.2 초"
+      },
+      "metricDetails": [
+        {
+          "key": "fcp",
+          "displayValue": "0.2 초",
+          "numericValue": 195,
+          "rating": "GOOD"
+        },
+        {
+          "key": "lcp",
+          "displayValue": "0.2 초",
+          "numericValue": 195,
+          "rating": "GOOD"
+        },
+        {
+          "key": "tbt",
+          "displayValue": "0 밀리초",
+          "numericValue": 0,
+          "rating": "GOOD"
+        },
+        {
+          "key": "cls",
+          "displayValue": "0",
+          "numericValue": 0,
+          "rating": "GOOD"
+        },
+        {
+          "key": "speedIndex",
+          "displayValue": "0.2 초",
+          "numericValue": 195,
+          "rating": "GOOD"
+        }
+      ],
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 0,
+      "scroll": null,
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 0,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 0
+        },
+        "byCategory": {}
+      }
+    }
+  ],
+  "summary": {
+    "total": 0,
+    "manualCheck": 0,
+    "bySeverity": {
+      "CRITICAL": 0,
+      "HIGH": 0,
+      "MEDIUM": 0,
+      "LOW": 0
+    },
+    "byCategory": {}
+  },
+  "findings": [],
+  "warnings": [
+    "게시판 글처럼 내용만 다르고 화면 모양이 같은 페이지 6개는 1개만 검사함 (상세 옵션에서 '모든 게시물'을 고르면 모두 검사)"
+  ]
+}

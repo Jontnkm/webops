@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>검사 결과 | WebOps</title>
+  <link rel="stylesheet" href="../css/app.css">
+  <link rel="stylesheet" href="../demo.css">
+</head>
+<body>
+<div class="demo-bar" role="note"><b>데모</b><span>저장된 예시 화면 · 실제 검사는 실행되지 않음</span><span class="long">· 검사 대상: 일부러 오류를 넣은 테스트 페이지</span></div>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<!-- 결과 화면 헤더: 왼쪽 로고, 오른쪽 버튼 -->
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="../index.html">WebOps <span class="brand-tag">가칭</span></a>
+    <span class="header-desc">웹사이트 품질 검사</span>
+    <div class="header-actions">
+      <form action="#" data-demo-off method="post">
+        <input type="hidden" name="url" value="http://127.0.0.1:4173/broken.html">
+        <input type="hidden" name="lighthouse" value="true">
+        <input type="hidden" name="scope" value="SITE">
+        <input type="hidden" name="posts" value="LATEST">
+        <input type="hidden" name="audit" value="GENERAL">
+        <input type="hidden" name="type" value="PERF">
+        <input type="hidden" name="mobileUrl" value="">
+        <button type="submit" class="btn">다시 검사</button>
+      </form>
+      <a class="btn" href="../files/J-20261119-101151-a97e/report.json" title="개발자용 원본 데이터(JSON)">원본 데이터</a>
+      <a class="btn btn-primary" href="../index.html">새 검사</a>
+      <!-- 맨 오른쪽: PDF 보고서 바로 받기 (만드는 데 몇 초 걸려 진행 표시). 웹접근성 점검이면 접근성 보고서(KWCAG 2.2) -->
+      <a class="btn btn-report" id="pdf-btn" data-pdf href="../files/J-20261119-101151-a97e/report.pdf"
+         title="검사 결과를 A4 보고서로 정리한 PDF 파일을 내려받습니다"><svg class="btn-ico" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 2v8M4.5 6.5 8 10l3.5-3.5M3 13h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>PDF 보고서 다운로드</a>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="result-layout">
+
+ <!-- ===== 왼쪽: 검사 결과 요약 ~ 로딩 속도 검사 결과 (따로 스크롤) ===== -->
+ <div class="pane pane-left" tabindex="0" aria-label="검사 결과 요약">
+
+  <!-- 검사 대상 · 날짜 · 소요 시간 · 검사 번호를 한 줄로 -->
+  <div class="result-line">
+    <span class="eyebrow" title="문제를 찾아 고치는 작업 화면입니다. 고객에게 드릴 문서는 'PDF 보고서 다운로드'로 받으세요.">검사 결과</span>
+    <h1 class="target-url" title="http://127.0.0.1:4173/broken.html">http://127.0.0.1:4173/broken.html</h1>
+    <span class="result-meta">
+      <span>사이트 5페이지</span><span class="dot" aria-hidden="true">·</span>
+      <span>로딩속도 점검</span><span class="dot" aria-hidden="true">·</span><span>2026-11-19 10:11</span><span class="dot" aria-hidden="true">·</span><span>소요 37.6초</span>
+    </span>
+    <span class="result-id" title="검사 번호 J-20261119-101151-a97e">검사 번호 J-20261119-101151-a97e</span>
+  </div>
+  <!-- 정기 검사 대상 사이트의 검사면: 품질 추이로 가는 길 -->
+  
+
+  <!-- 요약 숫자: 무엇을 얼마나 검사했고, 문제가 몇 건인지 (영역별 결과는 아래 '영역별 검사 결과') -->
+  <section class="stats" aria-label="검사 요약">
+    <div class="stat">
+      <span class="stat-label">검사한 페이지</span>
+      <span class="stat-value"><span>5</span><small>개</small></span>
+      <span class="stat-sub">모두 정상 접속</span>
+    </div>
+    
+    <div class="stat stat-strong">
+      <span class="stat-label">발견된 문제</span>
+      <span class="stat-value"><span>0</span><small>건</small></span>
+      <span class="stat-sub">같은 자리 반복은 1건으로 셈</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">직접 확인 필요</span>
+      <span class="stat-value"><span>0</span><small>건</small></span>
+      <span class="stat-sub">자동 판단이 어려운 항목</span>
+    </div>
+  </section>
+
+  <!-- 지난 검사와 비교 (같은 주소 · 같은 검사 범위의 지난 검사가 있을 때) -->
+  
+  <p class="small muted compare-none">
+    처음 검사한 주소라 비교할 지난 기록이 없습니다. 같은 주소 · 같은 검사 범위로 다시 검사하면 '해결됨 · 새로 생김'을 보여 줍니다.
+  </p>
+
+  <!-- 페이지별 점수표 (사이트 전체 검사일 때): 누르면 그 페이지에서 나온 문제를 팝업으로 -->
+  <section class="page-scores" aria-labelledby="pages-title">
+    <h2 id="pages-title">페이지별 점수표 <span class="muted small">검사한 순서 · 누르면 그 페이지의 문제를 볼 수 있습니다</span></h2>
+    <ol class="page-list">
+      <li>
+        <button type="button" class="page-item" aria-haspopup="dialog" data-open="tpl-page-1">
+          <span class="page-score grade-good">
+            <strong>100</strong>
+            <span>양호</span>
+          </span>
+          <span class="page-name">
+            <span class="page-title">WebOps 테스트 - 오류 페이지</span>
+            <span class="page-path" title="http://127.0.0.1:4173/broken.html">/broken.html</span>
+            <!-- 로딩속도 · SEO 점검: 페이지마다 Lighthouse 점수 -->
+            <span class="page-lh">속도 100점</span>
+          </span>
+          <span class="page-sev" aria-label="심각도별 문제 수">
+            <span class="sev-num sev-critical zero" title="심각 0건">심각 <b>0</b></span>
+            <span class="sev-num sev-high zero" title="높음 0건">높음 <b>0</b></span>
+            <span class="sev-num sev-medium zero" title="보통 0건">보통 <b>0</b></span>
+            <span class="sev-num sev-low zero" title="낮음 0건">낮음 <b>0</b></span>
+          </span>
+          
+          <span class="group-arrow" aria-hidden="true">›</span>
+        </button>
+
+        <!-- 팝업: 이 페이지에서 나온 문제 -->
+        <template id="tpl-page-1">
+          <div class="detail" data-title="1. WebOps 테스트 - 오류 페이지">
+            <div class="detail-meta">
+              <span class="page-score sm grade-good">
+                <strong>100</strong><span>양호</span>
+              </span>
+              <span class="page-url">http://127.0.0.1:4173/broken.html</span>
+            </div>
+            
+            <p class="empty small">이 페이지에서는 발견된 문제가 없습니다.</p>
+            <p class="small muted score-rule">점수 계산: 문제 종류마다 심각 20점 · 높음 10점 · 보통 4점 · 낮음 1점을 100점에서 뺍니다 (같은 문제가 여러 곳에 있어도 한 번만).</p>
+          </div>
+        </template>
+      </li>
+      <li>
+        <button type="button" class="page-item" aria-haspopup="dialog" data-open="tpl-page-2">
+          <span class="page-score grade-good">
+            <strong>100</strong>
+            <span>양호</span>
+          </span>
+          <span class="page-name">
+            <span class="page-title">WebOps 테스트 - 정상 페이지</span>
+            <span class="page-path" title="http://127.0.0.1:4173/ok.html">/ok.html</span>
+            <!-- 로딩속도 · SEO 점검: 페이지마다 Lighthouse 점수 -->
+            <span class="page-lh">속도 100점</span>
+          </span>
+          <span class="page-sev" aria-label="심각도별 문제 수">
+            <span class="sev-num sev-critical zero" title="심각 0건">심각 <b>0</b></span>
+            <span class="sev-num sev-high zero" title="높음 0건">높음 <b>0</b></span>
+            <span class="sev-num sev-medium zero" title="보통 0건">보통 <b>0</b></span>
+            <span class="sev-num sev-low zero" title="낮음 0건">낮음 <b>0</b></span>
+          </span>
+          
+          <span class="group-arrow" aria-hidden="true">›</span>
+        </button>
+
+        <!-- 팝업: 이 페이지에서 나온 문제 -->
+        <template id="tpl-page-2">
+          <div class="detail" data-title="2. WebOps 테스트 - 정상 페이지">
+            <div class="detail-meta">
+              <span class="page-score sm grade-good">
+                <strong>100</strong><span>양호</span>
+              </span>
+              <span class="page-url">http://127.0.0.1:4173/ok.html</span>
+            </div>
+            
+            <p class="empty small">이 페이지에서는 발견된 문제가 없습니다.</p>
+            <p class="small muted score-rule">점수 계산: 문제 종류마다 심각 20점 · 높음 10점 · 보통 4점 · 낮음 1점을 100점에서 뺍니다 (같은 문제가 여러 곳에 있어도 한 번만).</p>
+          </div>
+        </template>
+      </li>
+      <li>
+        <button type="button" class="page-item" aria-haspopup="dialog" data-open="tpl-page-3">
+          <span class="page-score grade-good">
+            <strong>100</strong>
+            <span>양호</span>
+          </span>
+          <span class="page-name">
+            <span class="page-title">ok</span>
+            <span class="page-path" title="http://127.0.0.1:4173/head-404.html">/head-404.html</span>
+            <!-- 로딩속도 · SEO 점검: 페이지마다 Lighthouse 점수 -->
+            <span class="page-lh">속도 100점</span>
+          </span>
+          <span class="page-sev" aria-label="심각도별 문제 수">
+            <span class="sev-num sev-critical zero" title="심각 0건">심각 <b>0</b></span>
+            <span class="sev-num sev-high zero" title="높음 0건">높음 <b>0</b></span>
+            <span class="sev-num sev-medium zero" title="보통 0건">보통 <b>0</b></span>
+            <span class="sev-num sev-low zero" title="낮음 0건">낮음 <b>0</b></span>
+          </span>
+          
+          <span class="group-arrow" aria-hidden="true">›</span>
+        </button>
+
+        <!-- 팝업: 이 페이지에서 나온 문제 -->
+        <template id="tpl-page-3">
+          <div class="detail" data-title="3. ok">
+            <div class="detail-meta">
+              <span class="page-score sm grade-good">
+                <strong>100</strong><span>양호</span>
+              </span>
+              <span class="page-url">http://127.0.0.1:4173/head-404.html</span>
+            </div>
+            
+            <p class="empty small">이 페이지에서는 발견된 문제가 없습니다.</p>
+            <p class="small muted score-rule">점수 계산: 문제 종류마다 심각 20점 · 높음 10점 · 보통 4점 · 낮음 1점을 100점에서 뺍니다 (같은 문제가 여러 곳에 있어도 한 번만).</p>
+          </div>
+        </template>
+      </li>
+      <li>
+        <button type="button" class="page-item" aria-haspopup="dialog" data-open="tpl-page-4">
+          <span class="page-score grade-good">
+            <strong>100</strong>
+            <span>양호</span>
+          </span>
+          <span class="page-name">
+            <span class="page-title">WebOps 테스트 - 하위 페이지</span>
+            <span class="page-path" title="http://127.0.0.1:4173/sub.html">/sub.html</span>
+            <!-- 로딩속도 · SEO 점검: 페이지마다 Lighthouse 점수 -->
+            <span class="page-lh">속도 100점</span>
+          </span>
+          <span class="page-sev" aria-label="심각도별 문제 수">
+            <span class="sev-num sev-critical zero" title="심각 0건">심각 <b>0</b></span>
+            <span class="sev-num sev-high zero" title="높음 0건">높음 <b>0</b></span>
+            <span class="sev-num sev-medium zero" title="보통 0건">보통 <b>0</b></span>
+            <span class="sev-num sev-low zero" title="낮음 0건">낮음 <b>0</b></span>
+          </span>
+          
+          <span class="group-arrow" aria-hidden="true">›</span>
+        </button>
+
+        <!-- 팝업: 이 페이지에서 나온 문제 -->
+        <template id="tpl-page-4">
+          <div class="detail" data-title="4. WebOps 테스트 - 하위 페이지">
+            <div class="detail-meta">
+              <span class="page-score sm grade-good">
+                <strong>100</strong><span>양호</span>
+              </span>
+              <span class="page-url">http://127.0.0.1:4173/sub.html</span>
+            </div>
+            
+            <p class="empty small">이 페이지에서는 발견된 문제가 없습니다.</p>
+            <p class="small muted score-rule">점수 계산: 문제 종류마다 심각 20점 · 높음 10점 · 보통 4점 · 낮음 1점을 100점에서 뺍니다 (같은 문제가 여러 곳에 있어도 한 번만).</p>
+          </div>
+        </template>
+      </li>
+      <li>
+        <button type="button" class="page-item" aria-haspopup="dialog" data-open="tpl-page-5">
+          <span class="page-score grade-good">
+            <strong>100</strong>
+            <span>양호</span>
+          </span>
+          <span class="page-name">
+            <span class="page-title">WebOps 테스트 - 게시판 글</span>
+            <span class="page-path" title="http://127.0.0.1:4173/board.html?id=1">/board.html?id=1</span>
+            <!-- 로딩속도 · SEO 점검: 페이지마다 Lighthouse 점수 -->
+            <span class="page-lh">속도 100점</span>
+          </span>
+          <span class="page-sev" aria-label="심각도별 문제 수">
+            <span class="sev-num sev-critical zero" title="심각 0건">심각 <b>0</b></span>
+            <span class="sev-num sev-high zero" title="높음 0건">높음 <b>0</b></span>
+            <span class="sev-num sev-medium zero" title="보통 0건">보통 <b>0</b></span>
+            <span class="sev-num sev-low zero" title="낮음 0건">낮음 <b>0</b></span>
+          </span>
+          
+          <span class="group-arrow" aria-hidden="true">›</span>
+        </button>
+
+        <!-- 팝업: 이 페이지에서 나온 문제 -->
+        <template id="tpl-page-5">
+          <div class="detail" data-title="5. WebOps 테스트 - 게시판 글">
+            <div class="detail-meta">
+              <span class="page-score sm grade-good">
+                <strong>100</strong><span>양호</span>
+              </span>
+              <span class="page-url">http://127.0.0.1:4173/board.html?id=1</span>
+            </div>
+            
+            <p class="empty small">이 페이지에서는 발견된 문제가 없습니다.</p>
+            <p class="small muted score-rule">점수 계산: 문제 종류마다 심각 20점 · 높음 10점 · 보통 4점 · 낮음 1점을 100점에서 뺍니다 (같은 문제가 여러 곳에 있어도 한 번만).</p>
+          </div>
+        </template>
+      </li>
+    </ol>
+    <p class="small muted score-rule">
+      <span>점수는 WebOps가 정한 계산식입니다. 문제 종류마다 심각 20점 · 높음 10점 · 보통 4점 · 낮음 1점을 100점에서 뺍니다 (같은 문제가 여러 곳에 있어도 한 번만).</span>
+      80점 이상 양호 · 50~79점 주의 · 50점 미만 위험. '직접 확인 필요' 항목은 빼고 계산하며, Lighthouse 점수와는 다릅니다.
+    </p>
+  </section>
+
+  <!-- 영역별 검사 결과: ① 기능 결함 ② 접근성 ③ 로딩 속도 ④ SEO
+       문제가 있는 영역·항목을 누르면 오른쪽에서 그 문제만 보인다. 이상 없는 항목은 누를 수 없다. -->
+  <section class="checklist" aria-labelledby="checklist-title">
+    <h2 id="checklist-title">영역별 검사 결과 <span class="muted small">문제가 있는 항목을 누르면 오른쪽에서 그 문제만 볼 수 있습니다</span></h2>
+
+    <div class="area area-ok">
+      <!-- 머리: 번호 | 이름·설명 | 점수 칸(로딩 속도·SEO만, 나머지는 빈칸) | 상태 칸 — 네 영역 모두 같은 위치 -->
+      <div class="area-head">
+        <span class="area-no">1</span>
+        <div class="area-name">
+          <h3>로딩 속도</h3>
+          <p>화면이 빨리 뜨는지 (Lighthouse 성능)</p>
+        </div>
+        <span class="area-score score-good" title="Lighthouse 점수 100점 (100점 만점)">
+          <span class="as-num"><b>100</b><small>점</small></span><em>Lighthouse</em>
+        </span>
+        <!-- 문제 있음: 누르면 오른쪽에서 이 영역 문제만 / 이상 없음·측정 안 함: 같은 크기의 상태 표시(누를 수 없음) -->
+        
+        <span class="area-action is-ok">
+          <span class="aa-icon" aria-hidden="true">
+            <svg viewBox="0 0 16 16" width="12" height="12"><path d="M3.5 8.5 6.5 11.5 12.5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            
+          </span><b>이상 없음</b>
+        </span>
+      </div>
+
+      <!-- 세부 항목 (기능 결함처럼 항목이 여럿인 영역만) -->
+      
+      <!-- 접근성 · 로딩 속도 · SEO: 이 영역에서 나온 문제 종류마다 카드. 누르면 오른쪽에서 그 문제만 본다 (값 G:묶음번호) -->
+      
+      <!-- 항목이 하나뿐인 영역: 참고 한 줄 -->
+      
+      
+    </div>
+  </section>
+
+  <!-- 접근성 지침(KWCAG 2.2) 검사항목 33개: 공공기관 점검 번호로 정리
+       문제가 있는 항목을 누르면 오른쪽에서 그 항목 문제만 본다 (값 K:번호). 자동으로 판단 못 하는 항목은 직접 확인 방법을 함께 보여 준다. -->
+  
+
+  <!-- 로딩 속도 검사 결과 (측정했을 때만): 지표별 막대 그래프 + 기준선 -->
+  <section class="perf" aria-labelledby="perf-title">
+    <h2 id="perf-title">로딩 속도 검사 결과 <span class="muted small">PC 화면 기준</span></h2>
+
+    <ul class="perf-legend" aria-label="그래프 보는 법">
+      <li><span class="lg lg-good"></span>좋음</li>
+      <li><span class="lg lg-mid"></span>개선 필요</li>
+      <li><span class="lg lg-bad"></span>나쁨</li>
+      <li><span class="lg lg-marker"></span>이 사이트</li>
+    </ul>
+
+    <div class="metric-list">
+      <div class="metric">
+        <div class="metric-head">
+          <div>
+            <strong class="metric-label">첫 화면이 보이기까지</strong>
+            <span class="metric-what">글자나 그림이 처음 나타나는 시간</span>
+          </div>
+          <div class="metric-result">
+            <span class="metric-value">0.26초</span>
+            <span class="rating rating-good">좋음</span>
+          </div>
+        </div>
+        <div class="meter" role="img" aria-label="첫 화면이 보이기까지 0.26초, 평가 좋음, 좋음 기준 0.93초, 보통 기준 1.6초">
+          <div class="meter-bar" style="background: linear-gradient(to right, var(--zone-good) 0% 36.5%, var(--zone-mid) 36.5% 62.5%, var(--zone-bad) 62.5% 100%);"></div>
+          <div class="meter-marker" style="left: 10.2%;">
+            <span class="meter-marker-label">0.26초</span>
+          </div>
+          <div class="meter-tick" style="left: 36.5%;">
+            <span>좋음 기준 0.93초</span>
+          </div>
+          <div class="meter-tick tick-poor" style="left: 62.5%;">
+            <span>보통 기준 1.6초</span>
+          </div>
+        </div>
+        <div class="metric-foot">
+          
+          <button type="button" class="btn btn-sm" aria-haspopup="dialog" data-open="tpl-m-fcp">개선 방법 보기</button>
+        </div>
+
+        <!-- 팝업에 들어갈 내용 (화면에는 보이지 않음) -->
+        <template id="tpl-m-fcp">
+          <div class="detail" data-title="첫 화면이 보이기까지 개선 방법">
+            <div class="detail-meta">
+              <span class="rating rating-good">좋음</span>
+              <span>현재 <strong>0.26초</strong></span>
+              <span class="muted">좋음 기준 0.93초 · 보통 기준 1.6초</span>
+            </div>
+            <div class="guide">
+              <div class="guide-row">
+                <p class="guide-label">측정 내용</p>
+                <p>글자나 그림이 처음 나타나는 시간</p>
+              </div>
+              <div class="guide-row">
+                <p class="guide-label">현재 상태</p>
+                <p>좋음 기준 안쪽입니다. 지금 상태를 유지하면 됩니다.</p>
+              </div>
+              <div class="guide-row guide-fix">
+                <p class="guide-label">해결 방법</p>
+                <ul class="tip-list">
+                  <li>첫 화면에 필요 없는 스크립트(JS)는 defer를 붙여 나중에 불러오세요.</li>
+                  <li>CSS 안의 @import 대신 HTML에서 바로 불러오고, 쓰지 않는 CSS를 줄이세요.</li>
+                  <li>웹 글꼴에 font-display: swap을 지정해 글꼴을 받는 동안에도 글자가 보이게 하세요.</li>
+                  <li>메인 페이지의 서버 처리 시간(쿼리·리다이렉트)을 줄이세요.</li>
+                </ul>
+              </div>
+            </div>
+            
+            <p class="small muted">
+              이 페이지에서 0.1초 이상 줄일 수 있는 뚜렷한 원인은 찾지 못했습니다. 위의 일반적인 방법을 참고하세요.
+            </p>
+          </div>
+        </template>
+      </div>
+      <div class="metric">
+        <div class="metric-head">
+          <div>
+            <strong class="metric-label">주요 내용이 다 보이기까지</strong>
+            <span class="metric-what">메인 배너처럼 가장 큰 요소가 나타나는 시간</span>
+          </div>
+          <div class="metric-result">
+            <span class="metric-value">0.26초</span>
+            <span class="rating rating-good">좋음</span>
+          </div>
+        </div>
+        <div class="meter" role="img" aria-label="주요 내용이 다 보이기까지 0.26초, 평가 좋음, 좋음 기준 1.2초, 보통 기준 2.4초">
+          <div class="meter-bar" style="background: linear-gradient(to right, var(--zone-good) 0% 31.3%, var(--zone-mid) 31.3% 62.5%, var(--zone-bad) 62.5% 100%);"></div>
+          <div class="meter-marker" style="left: 6.8%;">
+            <span class="meter-marker-label">0.26초</span>
+          </div>
+          <div class="meter-tick" style="left: 31.3%;">
+            <span>좋음 기준 1.2초</span>
+          </div>
+          <div class="meter-tick tick-poor" style="left: 62.5%;">
+            <span>보통 기준 2.4초</span>
+          </div>
+        </div>
+        <div class="metric-foot">
+          
+          <button type="button" class="btn btn-sm" aria-haspopup="dialog" data-open="tpl-m-lcp">개선 방법 보기</button>
+        </div>
+
+        <!-- 팝업에 들어갈 내용 (화면에는 보이지 않음) -->
+        <template id="tpl-m-lcp">
+          <div class="detail" data-title="주요 내용이 다 보이기까지 개선 방법">
+            <div class="detail-meta">
+              <span class="rating rating-good">좋음</span>
+              <span>현재 <strong>0.26초</strong></span>
+              <span class="muted">좋음 기준 1.2초 · 보통 기준 2.4초</span>
+            </div>
+            <div class="guide">
+              <div class="guide-row">
+                <p class="guide-label">측정 내용</p>
+                <p>메인 배너처럼 가장 큰 요소가 나타나는 시간</p>
+              </div>
+              <div class="guide-row">
+                <p class="guide-label">현재 상태</p>
+                <p>좋음 기준 안쪽입니다. 지금 상태를 유지하면 됩니다.</p>
+              </div>
+              <div class="guide-row guide-fix">
+                <p class="guide-label">해결 방법</p>
+                <ul class="tip-list">
+                  <li>메인 배너 이미지를 보이는 크기에 맞게 줄이고 WebP 등으로 압축하세요.</li>
+                  <li>메인 배너는 CSS 배경 대신 img로 넣고 &lt;link rel=&quot;preload&quot;&gt;로 미리 불러오세요.</li>
+                  <li>메인 배너에는 loading=&quot;lazy&quot;를 쓰지 마세요.</li>
+                  <li>화면 표시를 막는 CSS·JS를 줄이세요.</li>
+                </ul>
+              </div>
+            </div>
+            
+            <p class="small muted">
+              이 페이지에서 0.1초 이상 줄일 수 있는 뚜렷한 원인은 찾지 못했습니다. 위의 일반적인 방법을 참고하세요.
+            </p>
+          </div>
+        </template>
+      </div>
+      <div class="metric">
+        <div class="metric-head">
+          <div>
+            <strong class="metric-label">화면이 채워지는 속도</strong>
+            <span class="metric-what">보이는 영역이 내용으로 채워지는 시간</span>
+          </div>
+          <div class="metric-result">
+            <span class="metric-value">0.26초</span>
+            <span class="rating rating-good">좋음</span>
+          </div>
+        </div>
+        <div class="meter" role="img" aria-label="화면이 채워지는 속도 0.26초, 평가 좋음, 좋음 기준 1.3초, 보통 기준 2.3초">
+          <div class="meter-bar" style="background: linear-gradient(to right, var(--zone-good) 0% 35.6%, var(--zone-mid) 35.6% 62.5%, var(--zone-bad) 62.5% 100%);"></div>
+          <div class="meter-marker" style="left: 7.1%;">
+            <span class="meter-marker-label">0.26초</span>
+          </div>
+          <div class="meter-tick" style="left: 35.6%;">
+            <span>좋음 기준 1.3초</span>
+          </div>
+          <div class="meter-tick tick-poor" style="left: 62.5%;">
+            <span>보통 기준 2.3초</span>
+          </div>
+        </div>
+        <div class="metric-foot">
+          
+          <button type="button" class="btn btn-sm" aria-haspopup="dialog" data-open="tpl-m-speedIndex">개선 방법 보기</button>
+        </div>
+
+        <!-- 팝업에 들어갈 내용 (화면에는 보이지 않음) -->
+        <template id="tpl-m-speedIndex">
+          <div class="detail" data-title="화면이 채워지는 속도 개선 방법">
+            <div class="detail-meta">
+              <span class="rating rating-good">좋음</span>
+              <span>현재 <strong>0.26초</strong></span>
+              <span class="muted">좋음 기준 1.3초 · 보통 기준 2.3초</span>
+            </div>
+            <div class="guide">
+              <div class="guide-row">
+                <p class="guide-label">측정 내용</p>
+                <p>보이는 영역이 내용으로 채워지는 시간</p>
+              </div>
+              <div class="guide-row">
+                <p class="guide-label">현재 상태</p>
+                <p>좋음 기준 안쪽입니다. 지금 상태를 유지하면 됩니다.</p>
+              </div>
+              <div class="guide-row guide-fix">
+                <p class="guide-label">해결 방법</p>
+                <ul class="tip-list">
+                  <li>첫 화면(스크롤 없이 보이는 영역)의 이미지·글꼴을 먼저 불러오세요.</li>
+                  <li>화면 아래쪽 이미지는 loading=&quot;lazy&quot;로 나중에 불러오세요.</li>
+                  <li>화면 표시를 막는 CSS·JS를 줄이세요.</li>
+                </ul>
+              </div>
+            </div>
+            
+            <p class="small muted">
+              이 페이지에서 0.1초 이상 줄일 수 있는 뚜렷한 원인은 찾지 못했습니다. 위의 일반적인 방법을 참고하세요.
+            </p>
+          </div>
+        </template>
+      </div>
+      <div class="metric">
+        <div class="metric-head">
+          <div>
+            <strong class="metric-label">화면이 멈춰 있는 시간</strong>
+            <span class="metric-what">로딩 중 눌러도 반응하지 않는 시간</span>
+          </div>
+          <div class="metric-result">
+            <span class="metric-value">0ms</span>
+            <span class="rating rating-good">좋음</span>
+          </div>
+        </div>
+        <div class="meter" role="img" aria-label="화면이 멈춰 있는 시간 0ms, 평가 좋음, 좋음 기준 150ms, 보통 기준 350ms">
+          <div class="meter-bar" style="background: linear-gradient(to right, var(--zone-good) 0% 26.8%, var(--zone-mid) 26.8% 62.5%, var(--zone-bad) 62.5% 100%);"></div>
+          <div class="meter-marker" style="left: 0.0%;">
+            <span class="meter-marker-label">0ms</span>
+          </div>
+          <div class="meter-tick" style="left: 26.8%;">
+            <span>좋음 기준 150ms</span>
+          </div>
+          <div class="meter-tick tick-poor" style="left: 62.5%;">
+            <span>보통 기준 350ms</span>
+          </div>
+        </div>
+        <div class="metric-foot">
+          
+          <button type="button" class="btn btn-sm" aria-haspopup="dialog" data-open="tpl-m-tbt">개선 방법 보기</button>
+        </div>
+
+        <!-- 팝업에 들어갈 내용 (화면에는 보이지 않음) -->
+        <template id="tpl-m-tbt">
+          <div class="detail" data-title="화면이 멈춰 있는 시간 개선 방법">
+            <div class="detail-meta">
+              <span class="rating rating-good">좋음</span>
+              <span>현재 <strong>0ms</strong></span>
+              <span class="muted">좋음 기준 150ms · 보통 기준 350ms</span>
+            </div>
+            <div class="guide">
+              <div class="guide-row">
+                <p class="guide-label">측정 내용</p>
+                <p>로딩 중 눌러도 반응하지 않는 시간</p>
+              </div>
+              <div class="guide-row">
+                <p class="guide-label">현재 상태</p>
+                <p>좋음 기준 안쪽입니다. 지금 상태를 유지하면 됩니다.</p>
+              </div>
+              <div class="guide-row guide-fix">
+                <p class="guide-label">해결 방법</p>
+                <ul class="tip-list">
+                  <li>쓰지 않는 스크립트·플러그인을 빼세요 (중복으로 불러오는 jQuery 등).</li>
+                  <li>통계·광고·SNS 같은 외부 스크립트는 async·defer로 나중에 실행하세요.</li>
+                  <li>무거운 슬라이드·애니메이션 스크립트는 화면이 다 뜬 뒤 시작하세요.</li>
+                  <li>숨겨 둔 전체 메뉴·탭 내용 등 처음에 안 보이는 HTML을 줄이세요.</li>
+                </ul>
+              </div>
+            </div>
+            
+            <p class="small muted">
+              이 페이지에서 0.1초 이상 줄일 수 있는 뚜렷한 원인은 찾지 못했습니다. 위의 일반적인 방법을 참고하세요.
+            </p>
+          </div>
+        </template>
+      </div>
+      <div class="metric">
+        <div class="metric-head">
+          <div>
+            <strong class="metric-label">로딩 중 화면 밀림</strong>
+            <span class="metric-what">내용이 갑자기 밀리는 정도 (0에 가까울수록 좋음)</span>
+          </div>
+          <div class="metric-result">
+            <span class="metric-value">0</span>
+            <span class="rating rating-good">좋음</span>
+          </div>
+        </div>
+        <div class="meter" role="img" aria-label="로딩 중 화면 밀림 0, 평가 좋음, 좋음 기준 0.1, 보통 기준 0.25">
+          <div class="meter-bar" style="background: linear-gradient(to right, var(--zone-good) 0% 25.0%, var(--zone-mid) 25.0% 62.5%, var(--zone-bad) 62.5% 100%);"></div>
+          <div class="meter-marker" style="left: 0.0%;">
+            <span class="meter-marker-label">0</span>
+          </div>
+          <div class="meter-tick" style="left: 25.0%;">
+            <span>좋음 기준 0.1</span>
+          </div>
+          <div class="meter-tick tick-poor" style="left: 62.5%;">
+            <span>보통 기준 0.25</span>
+          </div>
+        </div>
+        <div class="metric-foot">
+          
+          <button type="button" class="btn btn-sm" aria-haspopup="dialog" data-open="tpl-m-cls">개선 방법 보기</button>
+        </div>
+
+        <!-- 팝업에 들어갈 내용 (화면에는 보이지 않음) -->
+        <template id="tpl-m-cls">
+          <div class="detail" data-title="로딩 중 화면 밀림 개선 방법">
+            <div class="detail-meta">
+              <span class="rating rating-good">좋음</span>
+              <span>현재 <strong>0</strong></span>
+              <span class="muted">좋음 기준 0.1 · 보통 기준 0.25</span>
+            </div>
+            <div class="guide">
+              <div class="guide-row">
+                <p class="guide-label">측정 내용</p>
+                <p>내용이 갑자기 밀리는 정도 (0에 가까울수록 좋음)</p>
+              </div>
+              <div class="guide-row">
+                <p class="guide-label">현재 상태</p>
+                <p>좋음 기준 안쪽입니다. 지금 상태를 유지하면 됩니다.</p>
+              </div>
+              <div class="guide-row guide-fix">
+                <p class="guide-label">해결 방법</p>
+                <ul class="tip-list">
+                  <li>이미지·배너에 width·height 또는 aspect-ratio를 지정해 자리를 미리 잡으세요.</li>
+                  <li>늦게 뜨는 띠배너·팝업·공지 영역은 min-height로 자리를 확보하세요.</li>
+                  <li>이미 보이는 내용 위에 요소를 끼워 넣지 마세요.</li>
+                  <li>웹 글꼴은 font-display: swap과 비슷한 기본 글꼴을 함께 지정해 글자 크기 변화를 줄이세요.</li>
+                </ul>
+              </div>
+            </div>
+            
+            <p class="small muted">
+              이 페이지에서 0.1초 이상 줄일 수 있는 뚜렷한 원인은 찾지 못했습니다. 위의 일반적인 방법을 참고하세요.
+            </p>
+          </div>
+        </template>
+      </div>
+    </div>
+    <p class="small muted perf-note">
+      기준선은 Lighthouse의 PC 평가 기준입니다. 실제 웹사이트 측정 자료(HTTP Archive)를 바탕으로 정해졌으며,
+      '좋음 기준'보다 빠르면 좋음, '보통 기준'보다 느리면 나쁨으로 평가합니다. 평균값이 아니라 평가 기준입니다.
+    </p>
+  </section>
+
+ </div>
+
+ <!-- ===== 오른쪽: 개선 방안 ~ 문제 목록 (따로 스크롤) ===== -->
+ <div class="pane pane-right" id="pane-right" tabindex="0" aria-label="개선 방안과 문제 목록">
+
+  <!-- 걸러 보기 · 정렬 (오른쪽 상단 고정): 개선 방안과 문제 목록에 함께 적용된다.
+       선택지 옆 건수는 다른 상자에서 고른 조건에 맞춰 바뀐다 (예: 유형 '접근성'이면 심각도 건수도 접근성 안에서) -->
+  <div class="filter-panel" role="group" aria-label="개선 방안과 문제 목록 걸러 보기">
+    <label class="fsel">
+      <span class="fsel-label">유형</span>
+      <select id="f-cat" aria-controls="issue-list">
+        <option value="ALL" data-label="전체 유형">전체 유형 0건</option>
+        <!-- 영역별 묶음: 기능 결함(전체 + 세부 항목) · 접근성 · 로딩 속도 · SEO · 기타(직접 확인 필요) -->
+        
+      </select>
+    </label>
+    <label class="fsel">
+      <span class="fsel-label">심각도</span>
+      <select id="f-sev" aria-controls="issue-list">
+        <option value="ALL" data-label="전체">전체 0건</option>
+        <option value="CRITICAL" data-label="심각" disabled="disabled">심각 0건</option>
+        <option value="HIGH" data-label="높음" disabled="disabled">높음 0건</option>
+        <option value="MEDIUM" data-label="보통" disabled="disabled">보통 0건</option>
+        <option value="LOW" data-label="낮음" disabled="disabled">낮음 0건</option>
+      </select>
+    </label>
+    <label class="fsel">
+      <span class="fsel-label">정렬</span>
+      <select id="f-sort" aria-controls="issue-list">
+        <option value="priority">급한 순</option>
+        <option value="count">많이 발견된 순</option>
+        <option value="type">유형 순</option>
+      </select>
+    </label>
+    <button type="button" class="btn btn-sm" id="f-reset" hidden>처음 상태로</button>
+  </div>
+
+  <!-- 개선 방안: 급한 순서대로 할 일 -->
+  
+
+  <!-- 문제 목록 -->
+  <section id="issues" class="issues" aria-labelledby="issues-title">
+    <div class="issues-head">
+      <h2 id="issues-title">
+        <span id="filter-title">전체 문제</span>
+        <span class="muted" id="filter-count">0건</span>
+      </h2>
+    </div>
+
+    <p class="empty" id="empty-msg">발견된 문제가 없습니다.</p>
+
+    <div class="groups" id="issue-list">
+      
+    </div>
+  </section>
+
+  <section class="warnings">
+    <h2>검사하면서 확인하지 못한 부분</h2>
+    <ul>
+      <li>게시판 글처럼 내용만 다르고 화면 모양이 같은 페이지 6개는 1개만 검사함 (상세 옵션에서 &#39;모든 게시물&#39;을 고르면 모두 검사)</li>
+    </ul>
+  </section>
+
+  <p class="disclaimer">
+    자동 검사 결과입니다. 웹 접근성 인증이나 법적 기준 충족을 보장하지 않습니다.
+    '직접 확인 필요' 항목은 프로그램이 판단하지 못한 것이므로 화면에서 직접 확인해 주세요.
+    로그인·검색·글쓰기처럼 버튼을 눌러야 하는 기능은 아직 검사하지 않습니다.
+  </p>
+ </div>
+</main>
+
+<!-- 상세 팝업 틀: 열 때마다 복사해서 새 팝업을 만든다 (여러 개를 겹쳐 열 수 있음, 어둡게 가리지 않고 그림자만) -->
+<template id="dialog-shell">
+  <dialog class="detail-dialog">
+    <div class="dialog-head">
+      <h2 class="dialog-title" tabindex="-1">상세</h2>
+      <button type="button" class="dialog-close" aria-label="닫기">×</button>
+    </div>
+    <div class="dialog-body"></div>
+  </dialog>
+</template>
+
+<!-- 팝업이 3개 이상 열려 있으면 오른쪽 아래에 '모든 팝업 닫기' (사용자 요청 11/19) -->
+<button type="button" id="close-all-popups" class="close-all-popups" hidden>
+  <span class="cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span>
+  <span class="cap-label">모든 팝업 닫기</span>
+  <span class="cap-count" id="close-all-count"></span>
+</button>
+
+<script>
+  // 오른쪽 위 선택 상자(유형 · 심각도 · 정렬)와 왼쪽 검사 항목 카드로 개선 방안 · 문제 목록을 걸러 보고 정렬한다 (새로고침 없음).
+  (() => {
+    const groups = [...document.querySelectorAll('.group')];
+    const planRows = [...document.querySelectorAll('.plan-row')];
+    const planList = document.getElementById('plan-list');
+    const groupList = document.getElementById('issue-list');
+    const cardButtons = [...document.querySelectorAll('button[data-filter]')];
+    const catSel = document.getElementById('f-cat');
+    const sevSel = document.getElementById('f-sev');
+    const sortSel = document.getElementById('f-sort');
+    const resetBtn = document.getElementById('f-reset');
+    const titleEl = document.getElementById('filter-title');
+    const countEl = document.getElementById('filter-count');
+    const emptyEl = document.getElementById('empty-msg');
+    const planEmptyEl = document.getElementById('plan-empty');
+    const planCountEl = document.getElementById('plan-count');
+    const issuesEl = document.getElementById('issues');
+    const state = { cat: 'ALL', sev: 'ALL', sort: 'priority' };
+
+    // 유형 '전체'는 직접 확인 필요 항목을 빼고 보여 준다 (직접 확인 필요는 유형에서 따로 고름)
+    // 'AREA:FUNCTION'처럼 영역 전체를 고르면 그 영역의 모든 분류 (직접 확인 필요는 빼고)
+    // 'G:g3'처럼 문제 종류 하나를 고르면 그 묶음만 (접근성·로딩 속도·SEO 카드)
+    const catMatch = (el, want = state.cat) => {
+      const cat = el.dataset.cat;
+      if (want === 'ALL') return cat !== 'MANUAL';
+      if (want.startsWith('AREA:')) return cat !== 'MANUAL' && el.dataset.area === want.slice(5);
+      if (want.startsWith('G:')) return el.dataset.gid === want.slice(2);
+      if (want.startsWith('K:')) return cat !== 'MANUAL' && el.dataset.kwcag === want.slice(2);
+      return cat === want;
+    };
+    const sevMatch = (sev, want = state.sev) => want === 'ALL' || sev === want;
+    const sumOf = (pred) => groups.filter(pred).reduce((n, g) => n + Number(g.dataset.count), 0);
+
+    // 정렬: 급한 순(처음 순서) / 많이 발견된 순 / 유형 순. 같으면 급한 순으로
+    const SORTS = {
+      priority: (a, b) => a.dataset.order - b.dataset.order,
+      count: (a, b) => b.dataset.count - a.dataset.count || a.dataset.order - b.dataset.order,
+      type: (a, b) => a.dataset.catrank - b.dataset.catrank || a.dataset.order - b.dataset.order,
+    };
+    const sortInto = (list, items) => {
+      if (list) [...items].sort(SORTS[state.sort]).forEach((el) => list.append(el));
+    };
+
+    // 선택지 옆 건수: 다른 상자에서 고른 조건 안에서 센다. 0건이면 고를 수 없게 (지금 고른 것은 예외)
+    function refreshOptions() {
+      for (const o of catSel.options) {
+        const n = sumOf((g) => catMatch(g, o.value) && sevMatch(g.dataset.sev));
+        o.textContent = o.dataset.label + ' ' + n + '건';
+        o.disabled = n === 0 && o.value !== 'ALL' && o.value !== state.cat;
+      }
+      for (const o of sevSel.options) {
+        const n = sumOf((g) => catMatch(g) && sevMatch(g.dataset.sev, o.value));
+        o.textContent = o.dataset.label + ' ' + n + '건';
+        o.disabled = n === 0 && o.value !== 'ALL' && o.value !== state.sev;
+      }
+    }
+
+    // 카드로 문제 종류 하나(G:묶음번호)를 고르면 유형 선택 상자에도 '고른 문제'로 보이게 선택지를 잠시 넣는다
+    function syncPickedOption() {
+      let og = catSel.querySelector('optgroup[data-picked]');
+      if (!state.cat.startsWith('G:') && !state.cat.startsWith('K:')) {
+        og?.remove();
+        return;
+      }
+      if (!og) {
+        og = document.createElement('optgroup');
+        og.label = '고른 문제';
+        og.dataset.picked = '1';
+        catSel.append(og);
+      }
+      const card = cardButtons.find((b) => b.dataset.filter === state.cat);
+      const o = document.createElement('option');
+      o.value = state.cat;
+      o.dataset.label = card?.dataset.label ?? '고른 문제';
+      og.replaceChildren(o);
+    }
+
+    function render() {
+      let total = 0;
+      for (const g of groups) {
+        const show = catMatch(g) && sevMatch(g.dataset.sev);
+        g.hidden = !show;
+        if (show) total += Number(g.dataset.count);
+      }
+      let planShown = 0;
+      for (const p of planRows) {
+        const show = catMatch(p) && sevMatch(p.dataset.sev);
+        p.hidden = !show;
+        if (show) planShown++;
+      }
+      sortInto(planList, planRows);
+      sortInto(groupList, groups);
+
+      syncPickedOption();
+      catSel.value = state.cat;
+      sevSel.value = state.sev;
+      sortSel.value = state.sort;
+      refreshOptions();
+      for (const b of cardButtons) b.setAttribute('aria-pressed', String(b.dataset.filter === state.cat));
+
+      const catLabel = state.cat === 'ALL' ? '전체 문제' : catSel.selectedOptions[0]?.dataset.label ?? '전체 문제';
+      const sevLabel = state.sev === 'ALL' ? '' : ' · ' + sevSel.selectedOptions[0]?.dataset.label;
+      titleEl.textContent = catLabel + sevLabel;
+      countEl.textContent = total + '건';
+      emptyEl.hidden = total > 0;
+      if (planCountEl) planCountEl.textContent = planShown + '가지';
+      if (planEmptyEl) planEmptyEl.hidden = planShown > 0 || planRows.length === 0;
+      resetBtn.hidden = state.cat === 'ALL' && state.sev === 'ALL' && state.sort === 'priority';
+    }
+
+    catSel.addEventListener('change', () => { state.cat = catSel.value; render(); });
+    sevSel.addEventListener('change', () => { state.sev = sevSel.value; render(); });
+    sortSel.addEventListener('change', () => { state.sort = sortSel.value; render(); });
+    resetBtn.addEventListener('click', () => {
+      Object.assign(state, { cat: 'ALL', sev: 'ALL', sort: 'priority' });
+      render();
+      catSel.focus();
+    });
+
+    // 왼쪽 검사 항목 카드: 누르면 그 유형만 (다시 누르면 전체로), 유형 선택 상자도 함께 바뀐다.
+    // 오른쪽은 맨 위(개선 방안)부터 보이게 한다. 문제 목록으로 내려가면 개선 방안이 위로 밀려나 안 보이는 것처럼 보였음.
+    const planSection = document.getElementById('plan-title')?.closest('section');
+    for (const b of cardButtons) {
+      b.addEventListener('click', () => {
+        state.cat = b.getAttribute('aria-pressed') === 'true' ? 'ALL' : b.dataset.filter;
+        render();
+        const pane = document.getElementById('pane-right');
+        const twoPanes = getComputedStyle(pane).overflowY === 'auto';
+        if (twoPanes) pane.scrollTo({ top: 0, behavior: 'smooth' });
+        else (planSection ?? issuesEl).scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+
+    // ---------- 상세 팝업 (여러 개를 겹쳐 열 수 있음) ----------
+    // - 새 팝업은 이미 열린 팝업을 가리지 않는 빈자리를 찾아 뜬다 (누른 버튼이 있는 영역 가운데에 가장 가까운 곳).
+    //   원래 크기로 자리가 없으면 폭을 줄여 다시 찾고, 그래도 없으면 브라우저 정가운데에 뜬다 (사용자 요청 11/19).
+    // - 한 번 뜬 팝업은 다른 팝업을 열거나 닫아도 움직이지 않는다. 제목 줄을 끌어 옮길 수 있다.
+    // - 가장 최근에 열린(또는 누른) 팝업이 맨 앞(z-index 가장 큼). 닫기는 각 팝업의 × 버튼으로만 한다.
+    // - 이미 열려 있는 내용을 다시 누르면 새로 만들지 않고 그 팝업을 맨 앞으로 가져온다.
+    const shell = document.getElementById('dialog-shell');
+    const rightPane = document.getElementById('pane-right');
+    const openPopups = [];   // { el, key, pane, opener }
+    let zTop = 100;
+    let seq = 0;
+    const MARGIN = 8;        // 화면 가장자리 여백(px)
+    const GAP = 12;          // 팝업끼리 띄우는 간격(px)
+    const SCAN = 16;         // 빈자리를 찾을 때 훑는 간격(px)
+
+    function paneRect(pane) {
+      const twoPanes = getComputedStyle(pane).overflowY === 'auto';
+      return twoPanes
+        ? pane.getBoundingClientRect()
+        : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+    }
+
+    // 끌어서 옮긴 팝업: 화면 밖으로 나가지 않게 (가운데 기준 좌표, 좌우 8px 여백 안 · 위는 8px 아래부터, 아래로는 제목 줄까지 보임)
+    function clampMoved(p, left, top) {
+      const r = p.el.getBoundingClientRect();
+      const hw = r.width / 2, hh = r.height / 2, M = 8;
+      const l = Math.min(Math.max(left, M + hw), Math.max(M + hw, window.innerWidth - M - hw));
+      const t = Math.min(Math.max(top, M + hh), Math.max(M + hh, window.innerHeight - 56 + hh));
+      p.el.style.left = l + 'px';
+      p.el.style.top = t + 'px';
+    }
+
+    // 새 팝업 자리 정하기: 다른 팝업과 겹치지 않는 자리 중 영역 가운데에 가장 가까운 곳
+    function autoPlace(p) {
+      const r = paneRect(p.pane);
+      const W = window.innerWidth, H = window.innerHeight;
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const others = openPopups.filter((o) => o !== p).map((o) => o.el.getBoundingClientRect());
+      const full = Math.max(280, Math.min(r.width - 32, 760));
+      p.el.style.maxHeight = Math.max(240, Math.min(r.height, H) - 32) + 'px';
+      // 원래 폭 → 좁힌 폭 순서로 시도 (좁힌 폭도 280px보다 작게는 줄이지 않음)
+      const widths = [...new Set([full, Math.min(full, 560), Math.min(full, 440)])];
+      for (const w of widths) {
+        p.el.style.width = w + 'px';
+        const box = p.el.getBoundingClientRect();
+        const hw = box.width / 2, hh = box.height / 2;
+        const free = (x, y) => others.every((o) =>
+          x + hw + GAP <= o.left || x - hw - GAP >= o.right || y + hh + GAP <= o.top || y - hh - GAP >= o.bottom);
+        const minX = MARGIN + hw, maxX = W - MARGIN - hw, minY = MARGIN + hh, maxY = H - MARGIN - hh;
+        if (maxX < minX || maxY < minY) continue;
+        const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+        let best = null, bestD = Infinity;
+        const tryAt = (x, y) => {
+          if (!free(x, y)) return;
+          const d = (x - cx) ** 2 + (y - cy) ** 2;
+          if (d < bestD) { bestD = d; best = [x, y]; }
+        };
+        tryAt(clamp(cx, minX, maxX), clamp(cy, minY, maxY));
+        if (!best) {
+          // 화면 전체를 일정 간격으로 훑고, 다른 팝업 바로 옆(위·아래·왼쪽·오른쪽) 자리도 따로 본다
+          for (let y = minY; y <= maxY + 0.5; y += SCAN) for (let x = minX; x <= maxX + 0.5; x += SCAN) tryAt(Math.min(x, maxX), Math.min(y, maxY));
+          for (const o of others) {
+            const ys = [clamp(cy, minY, maxY), clamp(o.top + hh, minY, maxY), clamp(o.bottom - hh, minY, maxY)];
+            const xs = [clamp(cx, minX, maxX), clamp(o.left + hw, minX, maxX), clamp(o.right - hw, minX, maxX)];
+            for (const y of ys) { tryAt(clamp(o.left - GAP - hw, minX, maxX), y); tryAt(clamp(o.right + GAP + hw, minX, maxX), y); }
+            for (const x of xs) { tryAt(x, clamp(o.top - GAP - hh, minY, maxY)); tryAt(x, clamp(o.bottom + GAP + hh, minY, maxY)); }
+          }
+        }
+        if (best) {
+          p.el.style.left = best[0] + 'px';
+          p.el.style.top = best[1] + 'px';
+          return;
+        }
+      }
+      // 빈자리가 없으면 원래 폭으로 브라우저 정가운데
+      p.el.style.width = full + 'px';
+      p.el.style.left = (W / 2) + 'px';
+      p.el.style.top = (H / 2) + 'px';
+      clampMoved(p, W / 2, H / 2);
+    }
+
+    // 화면 크기가 바뀌면 열린 팝업은 자리를 지키되 화면 안으로만 당긴다
+    const keepInView = () => openPopups.forEach((p) =>
+      clampMoved(p, parseFloat(p.el.style.left), parseFloat(p.el.style.top)));
+
+    // 팝업이 3개 이상이면 '모든 팝업 닫기' 버튼을 보인다
+    const closeAllBtn = document.getElementById('close-all-popups');
+    const closeAllCount = document.getElementById('close-all-count');
+    function syncCloseAll() {
+      closeAllBtn.hidden = openPopups.length < 3;
+      closeAllCount.textContent = openPopups.length;
+      closeAllBtn.setAttribute('aria-label', '열린 팝업 ' + openPopups.length + '개 모두 닫기');
+    }
+    closeAllBtn.addEventListener('click', () => {
+      const opener = openPopups[0]?.opener;
+      for (const p of openPopups.splice(0)) { p.el.close(); p.el.remove(); }
+      syncCloseAll();
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+    });
+
+    function bringToFront(p) {
+      p.el.style.zIndex = String(++zTop);
+      for (const o of openPopups) o.el.classList.toggle('is-front', o === p);
+    }
+
+    function openDetail(templateId, from) {
+      const tpl = document.getElementById(templateId);
+      if (!tpl) return;
+
+      const parent = from?.closest('dialog');
+      const parentPopup = parent ? openPopups.find((o) => o.el === parent) : null;
+      const pane = parentPopup?.pane ?? from?.closest('.pane') ?? rightPane;
+
+      // 같은 쪽에 같은 내용이 이미 열려 있으면 새로 만들지 않고 맨 앞으로 (왼쪽·오른쪽은 따로 센다)
+      const already = openPopups.find((o) => o.key === templateId && o.pane === pane);
+      if (already) {
+        bringToFront(already);
+        already.el.querySelector('.dialog-title').focus();
+        return;
+      }
+
+      const el = shell.content.firstElementChild.cloneNode(true);
+      const content = tpl.content.cloneNode(true);
+      const title = el.querySelector('.dialog-title');
+      title.id = 'dialog-title-' + (++seq);
+      title.textContent = content.firstElementChild?.dataset.title ?? '상세';
+      el.setAttribute('aria-labelledby', title.id);
+      el.querySelector('.dialog-body').append(content);
+      document.body.append(el);
+
+      const p = { el, key: templateId, pane, opener: from };
+      openPopups.push(p);
+      el.show();
+      bringToFront(p);
+      autoPlace(p);
+      syncCloseAll();
+      title.focus();
+      // 위치 캡처 그림이 늦게 불러와져 팝업이 커지면, 아직 옮기지 않은 팝업은 빈자리를 다시 찾는다
+      for (const img of el.querySelectorAll('img')) {
+        if (!img.complete) img.addEventListener('load', () => { if (!p.dragged) autoPlace(p); }, { once: true });
+      }
+
+      el.addEventListener('pointerdown', () => bringToFront(p));
+      el.addEventListener('focusin', () => bringToFront(p));
+      el.querySelector('.dialog-close').addEventListener('click', () => closePopup(p));
+
+      // 제목 줄을 잡고 끌면 팝업을 옮긴다. 제목 줄을 더블클릭하면 다른 팝업을 가리지 않는 빈자리로 다시 놓는다.
+      const head = el.querySelector('.dialog-head');
+      head.title = '끌어서 옮길 수 있습니다 · 더블클릭하면 빈자리로 다시 놓음';
+      head.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 || e.target.closest('.dialog-close')) return;
+        e.preventDefault();
+        bringToFront(p);
+        const sx = e.clientX, sy = e.clientY;
+        const sl = parseFloat(el.style.left), st = parseFloat(el.style.top);
+        head.setPointerCapture(e.pointerId);
+        el.classList.add('is-dragging');
+        const move = (ev) => {
+          p.dragged = true;
+          clampMoved(p, sl + ev.clientX - sx, st + ev.clientY - sy);
+        };
+        const up = () => {
+          head.removeEventListener('pointermove', move);
+          head.removeEventListener('pointerup', up);
+          head.removeEventListener('pointercancel', up);
+          el.classList.remove('is-dragging');
+        };
+        head.addEventListener('pointermove', move);
+        head.addEventListener('pointerup', up);
+        head.addEventListener('pointercancel', up);
+      });
+      head.addEventListener('dblclick', (e) => {
+        if (e.target.closest('.dialog-close')) return;
+        autoPlace(p);
+      });
+    }
+
+    function closePopup(p) {
+      const i = openPopups.indexOf(p);
+      if (i < 0) return;
+      openPopups.splice(i, 1);
+      p.el.close();
+      p.el.remove();
+      syncCloseAll();
+      // 초점: 이 팝업을 열었던 버튼으로, 그 버튼이 없으면 남은 팝업 중 맨 앞으로
+      if (p.opener?.isConnected) {
+        p.opener.focus({ preventScroll: true });
+      } else if (openPopups.length) {
+        const front = openPopups.reduce((a, b) => (Number(a.el.style.zIndex) > Number(b.el.style.zIndex) ? a : b));
+        bringToFront(front);
+        front.el.querySelector('.dialog-title').focus();
+      }
+    }
+
+    // data-open이 붙은 버튼(목록 줄, 속도 '개선 방법 보기', 팝업 안 '찾은 원인')은 팝업을 연다
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-open]');
+      if (b) openDetail(b.dataset.open, b);
+    });
+    window.addEventListener('resize', keepInView);
+
+    // 개선 방안 항목: 목록을 그 분류로 걸러 위치를 보여 주고, 상세 팝업을 연다
+    for (const b of document.querySelectorAll('[data-goto]')) {
+      b.addEventListener('click', () => {
+        const g = document.getElementById(b.dataset.goto);
+        if (!g) return;
+        state.cat = g.dataset.cat;
+        if (!sevMatch(g.dataset.sev)) state.sev = 'ALL';
+        render();
+        g.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        openDetail('tpl-' + g.id, b);
+      });
+    }
+
+    // ---------- 새로고침해도 스크롤 위치 기억 ----------
+    // 넓은 화면은 왼쪽·오른쪽 영역이 따로 스크롤되어 브라우저가 위치를 되살리지 못한다.
+    // 검사마다(주소별로) 창·왼쪽·오른쪽 스크롤 위치를 이 탭의 sessionStorage에 저장했다가 다시 연다.
+    // 저장소를 못 쓰는 환경(사생활 보호 모드 등)에서는 그냥 맨 위에서 시작한다.
+    const SCROLL_KEY = 'webops-scroll:' + location.pathname;
+    const leftPane = document.querySelector('.pane-left');
+    const scrollers = () => ({ win: window.scrollY, left: leftPane?.scrollTop ?? 0, right: rightPane?.scrollTop ?? 0 });
+    let saveTimer = 0;
+    const saveScroll = () => {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        try { sessionStorage.setItem(SCROLL_KEY, JSON.stringify(scrollers())); } catch (e) { /* 저장 못 해도 화면은 그대로 */ }
+      }, 150);
+    };
+    const restoreScroll = () => {
+      let saved = null;
+      try { saved = JSON.parse(sessionStorage.getItem(SCROLL_KEY) ?? 'null'); } catch (e) { saved = null; }
+      if (!saved) return;
+      if (leftPane && saved.left) leftPane.scrollTop = saved.left;
+      if (rightPane && saved.right) rightPane.scrollTop = saved.right;
+      if (saved.win) window.scrollTo(0, saved.win);
+    };
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    restoreScroll();
+    // 캡처 그림 등이 늦게 뜨면 높이가 바뀌므로, 그동안 사용자가 스크롤하지 않았다면 한 번 더 맞춘다
+    let userScrolled = false;
+    const markUser = () => { userScrolled = true; };
+    ['wheel', 'touchstart', 'keydown'].forEach((t) => window.addEventListener(t, markUser, { once: true, passive: true }));
+    window.addEventListener('load', () => { if (!userScrolled) restoreScroll(); });
+    window.addEventListener('scroll', saveScroll, { passive: true });
+    leftPane?.addEventListener('scroll', saveScroll, { passive: true });
+    rightPane?.addEventListener('scroll', saveScroll, { passive: true });
+    window.addEventListener('pagehide', () => {
+      try { sessionStorage.setItem(SCROLL_KEY, JSON.stringify(scrollers())); } catch (e) { /* 무시 */ }
+    });
+
+
+    // ---------- PDF 보고서: 만드는 데 몇 초 걸리므로 진행 중임을 보여 주고, 끝나면 내려받는다 ----------
+    // 전체 보고서(머리글)와 접근성 보고서(접근성 지침 구역) 버튼 모두
+    for (const pdfBtn of document.querySelectorAll('a[data-pdf]')) pdfBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (pdfBtn.getAttribute('aria-busy') === 'true') return;
+      const label = pdfBtn.lastChild.textContent;
+      pdfBtn.setAttribute('aria-busy', 'true');
+      pdfBtn.lastChild.textContent = 'PDF 만드는 중…';
+      try {
+        const res = await fetch(pdfBtn.href);
+        if (!res.ok) throw new Error('응답 코드 ' + res.status);
+        const blob = await res.blob();
+        const name = /filename="?([^";]+)"?/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? 'webops-report.pdf';
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      } catch (err) {
+        alert('PDF 보고서를 만들지 못했습니다. 잠시 후 다시 눌러 주세요. (' + err.message + ')');
+      } finally {
+        pdfBtn.lastChild.textContent = label;
+        pdfBtn.removeAttribute('aria-busy');
+      }
+    });
+
+  })();
+</script>
+<script src="../demo.js"></script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+{
+  "schemaVersion": "1.0",
+  "jobId": "J-20261119-101151-a425",
+  "tool": {
+    "name": "webops-runner",
+    "version": "0.1.0",
+    "browser": "159.0.8154.6",
+    "axeCore": null,
+    "lighthouse": null
+  },
+  "startedAt": "2026-11-19T01:12:44.580Z",
+  "finishedAt": "2026-11-19T01:12:46.738Z",
+  "durationMs": 2158,
+  "scope": {
+    "maxPages": 300,
+    "pageCount": 5,
+    "linksChecked": 0,
+    "scrolled": false,
+    "remaining": 0,
+    "check": "security",
+    "mobileUrl": null
+  },
+  "pages": [
+    {
+      "requestedUrl": "http://127.0.0.1:4173/broken.html",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 오류 페이지",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 5,
+      "scroll": null,
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 4,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 1,
+          "MEDIUM": 1,
+          "LOW": 2
+        },
+        "byCategory": {
+          "SECURITY": 4
+        }
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/ok.html",
+      "pageUrl": "http://127.0.0.1:4173/ok.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 정상 페이지",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 1,
+      "scroll": null,
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 4,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 1,
+          "MEDIUM": 1,
+          "LOW": 2
+        },
+        "byCategory": {
+          "SECURITY": 4
+        }
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/head-404.html",
+      "pageUrl": "http://127.0.0.1:4173/head-404.html",
+      "httpStatus": 200,
+      "title": "ok",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 0,
+      "scroll": null,
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 4,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 1,
+          "MEDIUM": 1,
+          "LOW": 2
+        },
+        "byCategory": {
+          "SECURITY": 4
+        }
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/sub.html",
+      "pageUrl": "http://127.0.0.1:4173/sub.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 하위 페이지",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 0,
+      "scroll": null,
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 4,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 1,
+          "MEDIUM": 1,
+          "LOW": 2
+        },
+        "byCategory": {
+          "SECURITY": 4
+        }
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/board.html?id=1",
+      "pageUrl": "http://127.0.0.1:4173/board.html?id=1",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 게시판 글",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 0,
+      "scroll": null,
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 4,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 1,
+          "MEDIUM": 1,
+          "LOW": 2
+        },
+        "byCategory": {
+          "SECURITY": 4
+        }
+      }
+    }
+  ],
+  "summary": {
+    "total": 4,
+    "manualCheck": 0,
+    "bySeverity": {
+      "CRITICAL": 0,
+      "HIGH": 1,
+      "MEDIUM": 1,
+      "LOW": 2
+    },
+    "byCategory": {
+      "SECURITY": 4
+    }
+  },
+  "findings": [
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101151-a425",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "SECURITY",
+      "ruleId": "https-not-used",
+      "source": "webops-runner",
+      "severity": "HIGH",
+      "selector": null,
+      "target": null,
+      "evidence": null,
+      "description": "보안 연결(https)을 쓰지 않음 · 입력한 정보가 암호화되지 않고 전송됨",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "21d14250e551fb73",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html",
+        "http://127.0.0.1:4173/ok.html",
+        "http://127.0.0.1:4173/head-404.html",
+        "http://127.0.0.1:4173/sub.html",
+        "http://127.0.0.1:4173/board.html?id=1"
+      ],
+      "occurrences": 5
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101151-a425",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "SECURITY",
+      "ruleId": "clickjacking-unprotected",
+      "source": "webops-runner",
+      "severity": "MEDIUM",
+      "selector": null,
+      "target": null,
+      "evidence": null,
+      "description": "다른 사이트가 이 페이지를 몰래 끼워 넣는 것을 막는 설정(X-Frame-Options)이 없음",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "9373418a2fb2934e",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html",
+        "http://127.0.0.1:4173/ok.html",
+        "http://127.0.0.1:4173/head-404.html",
+        "http://127.0.0.1:4173/sub.html",
+        "http://127.0.0.1:4173/board.html?id=1"
+      ],
+      "occurrences": 5
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101151-a425",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "SECURITY",
+      "ruleId": "nosniff-missing",
+      "source": "webops-runner",
+      "severity": "LOW",
+      "selector": null,
+      "target": null,
+      "evidence": null,
+      "description": "파일 형식 위장을 막는 설정(X-Content-Type-Options: nosniff)이 없음",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "da09c6ddcd5ab9d6",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html",
+        "http://127.0.0.1:4173/ok.html",
+        "http://127.0.0.1:4173/head-404.html",
+        "http://127.0.0.1:4173/sub.html",
+        "http://127.0.0.1:4173/board.html?id=1"
+      ],
+      "occurrences": 5
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101151-a425",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "SECURITY",
+      "ruleId": "csp-missing",
+      "source": "webops-runner",
+      "severity": "LOW",
+      "selector": null,
+      "target": null,
+      "evidence": null,
+      "description": "허용한 곳의 스크립트만 실행하게 하는 설정(콘텐츠 보안 정책, CSP)이 없음",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "f0cde4faee56d39e",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html",
+        "http://127.0.0.1:4173/ok.html",
+        "http://127.0.0.1:4173/head-404.html",
+        "http://127.0.0.1:4173/sub.html",
+        "http://127.0.0.1:4173/board.html?id=1"
+      ],
+      "occurrences": 5
+    }
+  ],
+  "warnings": [
+    "게시판 글처럼 내용만 다르고 화면 모양이 같은 페이지 6개는 1개만 검사함 (상세 옵션에서 '모든 게시물'을 고르면 모두 검사)"
+  ]
+}

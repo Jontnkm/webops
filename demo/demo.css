@@ -1,0 +1,22 @@
+/* 데모 전용: 왼쪽 아래 안내 띠 + 막힌 기능 알림 (화면 배치에 영향 없도록 fixed) */
+.demo-bar {
+  position: fixed; left: 16px; bottom: 16px; z-index: 2147482000; max-width: calc(100vw - 32px);
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px 8px 8px;
+  border-radius: 999px; background: rgba(27, 31, 36, .9); color: #fff;
+  font-size: 13px; line-height: 1.35; box-shadow: 0 6px 18px rgba(16, 24, 40, .25);
+  pointer-events: none;
+}
+.demo-bar b {
+  flex: none; padding: 2px 9px; border-radius: 999px; background: #ffbf47; color: #1b1f24; font-size: 12px;
+}
+.demo-toast {
+  position: fixed; left: 50%; top: 24px; z-index: 2147483100; transform: translate(-50%, -8px);
+  max-width: calc(100vw - 32px); padding: 12px 18px; border-radius: 12px;
+  background: #1b1f24; color: #fff; font-size: 14px; line-height: 1.5; text-align: center;
+  box-shadow: 0 12px 30px rgba(16, 24, 40, .3); opacity: 0; transition: opacity .2s, transform .2s;
+}
+.demo-toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 820px) {
+  .demo-bar { font-size: 12px; }
+  .demo-bar span.long { display: none; }
+}

@@ -1,0 +1,269 @@
+{
+  "schemaVersion": "1.0",
+  "jobId": "J-20261119-101151-3335",
+  "tool": {
+    "name": "webops-runner",
+    "version": "0.1.0",
+    "browser": "159.0.8154.6",
+    "axeCore": null,
+    "lighthouse": null
+  },
+  "startedAt": "2026-11-19T01:12:45.580Z",
+  "finishedAt": "2026-11-19T01:12:48.689Z",
+  "durationMs": 3109,
+  "scope": {
+    "maxPages": 300,
+    "pageCount": 5,
+    "linksChecked": 0,
+    "scrolled": true,
+    "remaining": 0,
+    "check": "mobile",
+    "mobileUrl": null
+  },
+  "pages": [
+    {
+      "requestedUrl": "http://127.0.0.1:4173/broken.html",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 오류 페이지",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 5,
+      "scroll": {
+        "steps": 4,
+        "pageHeight": 5826,
+        "reachedEnd": true,
+        "extraRequests": 1
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": {
+        "pageUrl": "http://127.0.0.1:4173/broken.html",
+        "viewportWidth": 360,
+        "scrollWidth": 809
+      },
+      "summary": {
+        "total": 1,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 1,
+          "LOW": 0
+        },
+        "byCategory": {
+          "MOBILE": 1
+        }
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/ok.html",
+      "pageUrl": "http://127.0.0.1:4173/ok.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 정상 페이지",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 1,
+      "scroll": {
+        "steps": 1,
+        "pageHeight": 740,
+        "reachedEnd": true,
+        "extraRequests": 0
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": {
+        "pageUrl": "http://127.0.0.1:4173/ok.html",
+        "viewportWidth": 360,
+        "scrollWidth": 360
+      },
+      "summary": {
+        "total": 0,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 0
+        },
+        "byCategory": {}
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/head-404.html",
+      "pageUrl": "http://127.0.0.1:4173/head-404.html",
+      "httpStatus": 200,
+      "title": "ok",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 0,
+      "scroll": {
+        "steps": 1,
+        "pageHeight": 2015,
+        "reachedEnd": true,
+        "extraRequests": 0
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": {
+        "pageUrl": "http://127.0.0.1:4173/head-404.html",
+        "viewportWidth": 980,
+        "scrollWidth": 980
+      },
+      "summary": {
+        "total": 1,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 1,
+          "LOW": 0
+        },
+        "byCategory": {
+          "MOBILE": 1
+        }
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/sub.html",
+      "pageUrl": "http://127.0.0.1:4173/sub.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 하위 페이지",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 0,
+      "scroll": {
+        "steps": 1,
+        "pageHeight": 740,
+        "reachedEnd": true,
+        "extraRequests": 0
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": {
+        "pageUrl": "http://127.0.0.1:4173/sub.html",
+        "viewportWidth": 360,
+        "scrollWidth": 360
+      },
+      "summary": {
+        "total": 0,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 0
+        },
+        "byCategory": {}
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/board.html?id=1",
+      "pageUrl": "http://127.0.0.1:4173/board.html?id=1",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 게시판 글",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": null,
+      "linksChecked": null,
+      "imageCount": 0,
+      "scroll": {
+        "steps": 1,
+        "pageHeight": 740,
+        "reachedEnd": true,
+        "extraRequests": 0
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": {
+        "pageUrl": "http://127.0.0.1:4173/board.html?id=1",
+        "viewportWidth": 360,
+        "scrollWidth": 360
+      },
+      "summary": {
+        "total": 0,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 0
+        },
+        "byCategory": {}
+      }
+    }
+  ],
+  "summary": {
+    "total": 2,
+    "manualCheck": 0,
+    "bySeverity": {
+      "CRITICAL": 0,
+      "HIGH": 0,
+      "MEDIUM": 2,
+      "LOW": 0
+    },
+    "byCategory": {
+      "MOBILE": 2
+    }
+  },
+  "findings": [
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101151-3335",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "MOBILE",
+      "ruleId": "mobile-horizontal-scroll",
+      "source": "playwright",
+      "severity": "MEDIUM",
+      "selector": "#wide-banner",
+      "target": null,
+      "evidence": "<div id=\"wide-banner\" style=\"width:800px;height:40px;background:#eef\">고정 너비 800px 배너</div>",
+      "description": "휴대폰 화면(가로 360px)에서 페이지가 옆으로 449px 밀림 · 이 요소가 화면보다 448px 넓음",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101151-3335/p1-m1.jpg",
+      "fingerprint": "4ecb96a8c9d75889",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101151-3335",
+      "pageUrl": "http://127.0.0.1:4173/head-404.html",
+      "category": "MOBILE",
+      "ruleId": "mobile-viewport-missing",
+      "source": "playwright",
+      "severity": "MEDIUM",
+      "selector": null,
+      "target": null,
+      "evidence": null,
+      "description": "모바일 화면 설정(viewport)이 없음 · 휴대폰에서 PC 화면이 작게 줄어 보임 (반응형이 아님)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "591ab957b6e0b839",
+      "pages": [
+        "http://127.0.0.1:4173/head-404.html"
+      ],
+      "occurrences": 1
+    }
+  ],
+  "warnings": [
+    "게시판 글처럼 내용만 다르고 화면 모양이 같은 페이지 6개는 1개만 검사함 (상세 옵션에서 '모든 게시물'을 고르면 모두 검사)"
+  ]
+}

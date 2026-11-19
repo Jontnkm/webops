@@ -1,0 +1,857 @@
+{
+  "schemaVersion": "1.0",
+  "jobId": "J-20261119-101150-bd70",
+  "tool": {
+    "name": "webops-runner",
+    "version": "0.1.0",
+    "browser": "159.0.8154.6",
+    "axeCore": "4.14.0",
+    "lighthouse": "13.6.0"
+  },
+  "startedAt": "2026-11-19T01:11:52.212Z",
+  "finishedAt": "2026-11-19T01:12:08.113Z",
+  "durationMs": 15901,
+  "scope": {
+    "maxPages": 300,
+    "pageCount": 5,
+    "linksChecked": 13,
+    "scrolled": true,
+    "remaining": 0,
+    "check": "all",
+    "mobileUrl": null
+  },
+  "pages": [
+    {
+      "requestedUrl": "http://127.0.0.1:4173/broken.html",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 오류 페이지",
+      "scores": {
+        "performance": 100,
+        "seo": 82
+      },
+      "metrics": {
+        "fcp": "0.3 초",
+        "lcp": "0.3 초",
+        "tbt": "0 밀리초",
+        "cls": "0",
+        "speedIndex": "0.3 초"
+      },
+      "metricDetails": [
+        {
+          "key": "fcp",
+          "displayValue": "0.3 초",
+          "numericValue": 260,
+          "rating": "GOOD"
+        },
+        {
+          "key": "lcp",
+          "displayValue": "0.3 초",
+          "numericValue": 260,
+          "rating": "GOOD"
+        },
+        {
+          "key": "tbt",
+          "displayValue": "0 밀리초",
+          "numericValue": 0,
+          "rating": "GOOD"
+        },
+        {
+          "key": "cls",
+          "displayValue": "0",
+          "numericValue": 0,
+          "rating": "GOOD"
+        },
+        {
+          "key": "speedIndex",
+          "displayValue": "0.3 초",
+          "numericValue": 260,
+          "rating": "GOOD"
+        }
+      ],
+      "linkCount": 5,
+      "linksChecked": 5,
+      "imageCount": 5,
+      "scroll": {
+        "steps": 9,
+        "pageHeight": 5736,
+        "reachedEnd": true,
+        "extraRequests": 1
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": {
+        "pageUrl": "http://127.0.0.1:4173/broken.html",
+        "viewportWidth": 360,
+        "scrollWidth": 809
+      },
+      "summary": {
+        "total": 23,
+        "manualCheck": 1,
+        "bySeverity": {
+          "CRITICAL": 4,
+          "HIGH": 8,
+          "MEDIUM": 7,
+          "LOW": 4
+        },
+        "byCategory": {
+          "IMAGE": 2,
+          "RESOURCE": 2,
+          "API": 1,
+          "SCRIPT": 2,
+          "MOBILE": 1,
+          "ACCESSIBILITY": 8,
+          "SECURITY": 4,
+          "LINK": 2,
+          "SEO": 1
+        }
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/ok.html",
+      "pageUrl": "http://127.0.0.1:4173/ok.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 정상 페이지",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": 1,
+      "linksChecked": 1,
+      "imageCount": 1,
+      "scroll": {
+        "steps": 1,
+        "pageHeight": 720,
+        "reachedEnd": true,
+        "extraRequests": 0
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": {
+        "pageUrl": "http://127.0.0.1:4173/ok.html",
+        "viewportWidth": 360,
+        "scrollWidth": 360
+      },
+      "summary": {
+        "total": 4,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 1,
+          "MEDIUM": 1,
+          "LOW": 2
+        },
+        "byCategory": {
+          "SECURITY": 4
+        }
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/head-404.html",
+      "pageUrl": "http://127.0.0.1:4173/head-404.html",
+      "httpStatus": 200,
+      "title": "ok",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": 0,
+      "linksChecked": 0,
+      "imageCount": 0,
+      "scroll": {
+        "steps": 1,
+        "pageHeight": 720,
+        "reachedEnd": true,
+        "extraRequests": 0
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": {
+        "pageUrl": "http://127.0.0.1:4173/head-404.html",
+        "viewportWidth": 980,
+        "scrollWidth": 980
+      },
+      "summary": {
+        "total": 6,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 2,
+          "MEDIUM": 2,
+          "LOW": 2
+        },
+        "byCategory": {
+          "ACCESSIBILITY": 1,
+          "MOBILE": 1,
+          "SECURITY": 4
+        }
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/sub.html",
+      "pageUrl": "http://127.0.0.1:4173/sub.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 하위 페이지",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": 9,
+      "linksChecked": 9,
+      "imageCount": 0,
+      "scroll": {
+        "steps": 1,
+        "pageHeight": 720,
+        "reachedEnd": true,
+        "extraRequests": 0
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": {
+        "pageUrl": "http://127.0.0.1:4173/sub.html",
+        "viewportWidth": 360,
+        "scrollWidth": 360
+      },
+      "summary": {
+        "total": 6,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 2,
+          "MEDIUM": 2,
+          "LOW": 2
+        },
+        "byCategory": {
+          "ACCESSIBILITY": 1,
+          "SECURITY": 4,
+          "LINK": 1
+        }
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/board.html?id=1",
+      "pageUrl": "http://127.0.0.1:4173/board.html?id=1",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 게시판 글",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": 1,
+      "linksChecked": 1,
+      "imageCount": 0,
+      "scroll": {
+        "steps": 1,
+        "pageHeight": 720,
+        "reachedEnd": true,
+        "extraRequests": 0
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": {
+        "pageUrl": "http://127.0.0.1:4173/board.html?id=1",
+        "viewportWidth": 360,
+        "scrollWidth": 360
+      },
+      "summary": {
+        "total": 4,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 1,
+          "MEDIUM": 1,
+          "LOW": 2
+        },
+        "byCategory": {
+          "SECURITY": 4
+        }
+      }
+    }
+  ],
+  "summary": {
+    "total": 25,
+    "manualCheck": 1,
+    "bySeverity": {
+      "CRITICAL": 4,
+      "HIGH": 9,
+      "MEDIUM": 8,
+      "LOW": 4
+    },
+    "byCategory": {
+      "ACCESSIBILITY": 9,
+      "RESOURCE": 2,
+      "API": 1,
+      "SECURITY": 4,
+      "IMAGE": 2,
+      "SCRIPT": 2,
+      "MOBILE": 2,
+      "LINK": 2,
+      "SEO": 1
+    }
+  },
+  "findings": [
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "ACCESSIBILITY",
+      "ruleId": "button-name",
+      "source": "axe-core",
+      "severity": "CRITICAL",
+      "selector": "button",
+      "target": null,
+      "evidence": "<button type=\"button\"></button>",
+      "description": "버튼에 반드시 인식 가능한 텍스트가 있어야 합니다.",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/button-name?application=playwright&lang=ko",
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-bd70/p1-4.jpg",
+      "fingerprint": "7d9ac2b0ecd95c08",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "ACCESSIBILITY",
+      "ruleId": "image-alt",
+      "source": "axe-core",
+      "severity": "CRITICAL",
+      "selector": "img[src$=\"main-visual.png\"]",
+      "target": null,
+      "evidence": "<img src=\"img/main-visual.png\" width=\"300\" height=\"120\">",
+      "description": "이미지는 반드시 대체텍스트를 가져야 합니다.",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/image-alt?application=playwright&lang=ko",
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-bd70/p1-1.jpg",
+      "fingerprint": "6233dd2f08d2dbf3",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "ACCESSIBILITY",
+      "ruleId": "image-alt",
+      "source": "axe-core",
+      "severity": "CRITICAL",
+      "selector": "main > img[src$=\"logo.svg\"][width=\"120\"][height=\"40\"]",
+      "target": null,
+      "evidence": "<img src=\"img/logo.svg\" width=\"120\" height=\"40\">",
+      "description": "이미지는 반드시 대체텍스트를 가져야 합니다.",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/image-alt?application=playwright&lang=ko",
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-bd70/p1-5.jpg",
+      "fingerprint": "0778415ed58e3231",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "ACCESSIBILITY",
+      "ruleId": "label",
+      "source": "axe-core",
+      "severity": "CRITICAL",
+      "selector": "input",
+      "target": null,
+      "evidence": "<input type=\"text\">",
+      "description": "form 엘리먼트는 반드시 레이블을 가져야 합니다.",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/label?application=playwright&lang=ko",
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-bd70/p1-6.jpg",
+      "fingerprint": "060ad42d98e440da",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "RESOURCE",
+      "ruleId": "resource-failed",
+      "source": "playwright",
+      "severity": "HIGH",
+      "selector": null,
+      "target": "http://127.0.0.1:4173/css/missing.css",
+      "evidence": null,
+      "description": "화면 디자인(CSS) 파일을 불러오지 못함: 없는 파일(404)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "0fd210299f69a7cf",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "RESOURCE",
+      "ruleId": "resource-failed",
+      "source": "playwright",
+      "severity": "HIGH",
+      "selector": null,
+      "target": "http://127.0.0.1:4173/js/missing-ui.js",
+      "evidence": null,
+      "description": "기능 스크립트(JS) 파일을 불러오지 못함: 없는 파일(404)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "0ab24466f4bd996c",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "API",
+      "ruleId": "api-failed",
+      "source": "playwright",
+      "severity": "HIGH",
+      "selector": null,
+      "target": "http://127.0.0.1:4173/api/notice-list.do",
+      "evidence": "GET http://127.0.0.1:4173/api/notice-list.do",
+      "description": "데이터를 불러오지 못함: 서버 오류(500)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "33fc84141c7f7085",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "ACCESSIBILITY",
+      "ruleId": "color-contrast",
+      "source": "axe-core",
+      "severity": "HIGH",
+      "selector": "main > p",
+      "target": null,
+      "evidence": "<p style=\"color:#c8c8c8;background:#ffffff\">대비가 낮아 읽기 어려운 글자</p>",
+      "description": "엘리먼트는 반드시 충분한 명도 대비를 가져야 합니다. · 대비 1.67:1 (기준 4.5:1 이상) · 글자색 #c8c8c8 · 배경색 #ffffff · 글자 16px",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/color-contrast?application=playwright&lang=ko",
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-bd70/p1-7.jpg",
+      "fingerprint": "629049c0218a5293",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "ACCESSIBILITY",
+      "ruleId": "color-contrast",
+      "source": "axe-core",
+      "severity": "HIGH",
+      "selector": "li:nth-child(1) > span",
+      "target": null,
+      "evidence": "<span class=\"date\" style=\"color:#bbbbbb\">2026.11.01</span>",
+      "description": "엘리먼트는 반드시 충분한 명도 대비를 가져야 합니다. · 대비 1.91:1 (기준 4.5:1 이상) · 글자색 #bbbbbb · 배경색 #ffffff · 글자 16px",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/color-contrast?application=playwright&lang=ko",
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-bd70/p1-8.jpg",
+      "fingerprint": "35b2db93def147a5",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 4
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "ACCESSIBILITY",
+      "ruleId": "html-has-lang",
+      "source": "axe-core",
+      "severity": "HIGH",
+      "selector": "html",
+      "target": null,
+      "evidence": "<html>",
+      "description": "<html> 엘리먼트는 반드시 lang 어트리뷰트를 가져야 합니다.",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/html-has-lang?application=playwright&lang=ko",
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "843d159245a52d9f",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html",
+        "http://127.0.0.1:4173/head-404.html"
+      ],
+      "occurrences": 2
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "ACCESSIBILITY",
+      "ruleId": "target-size",
+      "source": "axe-core",
+      "severity": "HIGH",
+      "selector": "button",
+      "target": null,
+      "evidence": "<button type=\"button\"></button>",
+      "description": "All touch targets must be 24px large, or leave sufficient space",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/target-size?application=playwright&lang=ko",
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-bd70/p1-4.jpg",
+      "fingerprint": "278cb2638c42b75a",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "SECURITY",
+      "ruleId": "https-not-used",
+      "source": "webops-runner",
+      "severity": "HIGH",
+      "selector": null,
+      "target": null,
+      "evidence": null,
+      "description": "보안 연결(https)을 쓰지 않음 · 입력한 정보가 암호화되지 않고 전송됨",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "21d14250e551fb73",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html",
+        "http://127.0.0.1:4173/ok.html",
+        "http://127.0.0.1:4173/head-404.html",
+        "http://127.0.0.1:4173/sub.html",
+        "http://127.0.0.1:4173/board.html?id=1"
+      ],
+      "occurrences": 5
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/sub.html",
+      "category": "ACCESSIBILITY",
+      "ruleId": "target-size",
+      "source": "axe-core",
+      "severity": "HIGH",
+      "selector": "a[href=\"board.html?id=1\"]",
+      "target": null,
+      "evidence": "<a href=\"board.html?id=1\">글 1</a>",
+      "description": "All touch targets must be 24px large, or leave sufficient space",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/target-size?application=playwright&lang=ko",
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-bd70/p4-1.jpg",
+      "fingerprint": "33a59c9baa57bbcf",
+      "pages": [
+        "http://127.0.0.1:4173/sub.html"
+      ],
+      "occurrences": 7
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "IMAGE",
+      "ruleId": "image-broken",
+      "source": "playwright",
+      "severity": "MEDIUM",
+      "selector": "html > body > main > img:nth-of-type(1)",
+      "target": "http://127.0.0.1:4173/img/main-visual.png",
+      "evidence": "<img src=\"img/main-visual.png\" width=\"300\" height=\"120\">",
+      "description": "이미지를 불러오지 못함: 없는 파일(404)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-bd70/p1-1.jpg",
+      "fingerprint": "72b8ba8e79337e8c",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "IMAGE",
+      "ruleId": "image-broken",
+      "source": "playwright",
+      "severity": "MEDIUM",
+      "selector": "#lazy-banner",
+      "target": "http://127.0.0.1:4173/img/lazy-banner.png",
+      "evidence": "<img id=\"lazy-banner\" src=\"img/lazy-banner.png\" loading=\"lazy\" alt=\"아래쪽 배너\" width=\"300\" height=\"100\">",
+      "description": "이미지를 불러오지 못함: 없는 파일(404)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-bd70/p1-3.jpg",
+      "fingerprint": "cab29469e20fac97",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "SCRIPT",
+      "ruleId": "js-error",
+      "source": "playwright",
+      "severity": "MEDIUM",
+      "selector": null,
+      "target": null,
+      "evidence": "undefinedFunctionForTest is not defined",
+      "description": "화면 동작 중 스크립트 오류 발생",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "31c5a9b66c2bf8eb",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "MOBILE",
+      "ruleId": "mobile-horizontal-scroll",
+      "source": "playwright",
+      "severity": "MEDIUM",
+      "selector": "#wide-banner",
+      "target": null,
+      "evidence": "<div id=\"wide-banner\" style=\"width:800px;height:40px;background:#eef\">고정 너비 800px 배너</div>",
+      "description": "휴대폰 화면(가로 360px)에서 페이지가 옆으로 449px 밀림 · 이 요소가 화면보다 448px 넓음",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-bd70/p1-m1.jpg",
+      "fingerprint": "4ecb96a8c9d75889",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "SECURITY",
+      "ruleId": "clickjacking-unprotected",
+      "source": "webops-runner",
+      "severity": "MEDIUM",
+      "selector": null,
+      "target": null,
+      "evidence": null,
+      "description": "다른 사이트가 이 페이지를 몰래 끼워 넣는 것을 막는 설정(X-Frame-Options)이 없음",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "9373418a2fb2934e",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html",
+        "http://127.0.0.1:4173/ok.html",
+        "http://127.0.0.1:4173/head-404.html",
+        "http://127.0.0.1:4173/sub.html",
+        "http://127.0.0.1:4173/board.html?id=1"
+      ],
+      "occurrences": 5
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "LINK",
+      "ruleId": "link-broken",
+      "source": "webops-runner",
+      "severity": "MEDIUM",
+      "selector": "body > main > ul:nth-of-type(2) > li:nth-of-type(2) > a",
+      "target": "http://127.0.0.1:4173/no-such-page.html",
+      "evidence": "링크 문구: \"깨진 링크\"",
+      "description": "깨진 링크: 없는 페이지(404)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-bd70/p1-12.jpg",
+      "fingerprint": "8169db692ab161b0",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "LINK",
+      "ruleId": "link-broken",
+      "source": "webops-runner",
+      "severity": "MEDIUM",
+      "selector": "#footer > a",
+      "target": "http://127.0.0.1:4173/common-missing.html",
+      "evidence": "링크 문구: \"개인정보처리방침\"",
+      "description": "깨진 링크: 없는 페이지(404)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-bd70/p1-13.jpg",
+      "fingerprint": "2fb47f0ace2c3766",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html",
+        "http://127.0.0.1:4173/sub.html"
+      ],
+      "occurrences": 2
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/head-404.html",
+      "category": "MOBILE",
+      "ruleId": "mobile-viewport-missing",
+      "source": "playwright",
+      "severity": "MEDIUM",
+      "selector": null,
+      "target": null,
+      "evidence": null,
+      "description": "모바일 화면 설정(viewport)이 없음 · 휴대폰에서 PC 화면이 작게 줄어 보임 (반응형이 아님)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "591ab957b6e0b839",
+      "pages": [
+        "http://127.0.0.1:4173/head-404.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "SCRIPT",
+      "ruleId": "console-error",
+      "source": "playwright",
+      "severity": "LOW",
+      "selector": null,
+      "target": "http://127.0.0.1:4173/broken.html",
+      "evidence": "공지사항 목록을 그리지 못했습니다 (테스트)",
+      "description": "브라우저가 오류 메시지를 남김",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "7c864a1b272d3296",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "SECURITY",
+      "ruleId": "nosniff-missing",
+      "source": "webops-runner",
+      "severity": "LOW",
+      "selector": null,
+      "target": null,
+      "evidence": null,
+      "description": "파일 형식 위장을 막는 설정(X-Content-Type-Options: nosniff)이 없음",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "da09c6ddcd5ab9d6",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html",
+        "http://127.0.0.1:4173/ok.html",
+        "http://127.0.0.1:4173/head-404.html",
+        "http://127.0.0.1:4173/sub.html",
+        "http://127.0.0.1:4173/board.html?id=1"
+      ],
+      "occurrences": 5
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "SECURITY",
+      "ruleId": "csp-missing",
+      "source": "webops-runner",
+      "severity": "LOW",
+      "selector": null,
+      "target": null,
+      "evidence": null,
+      "description": "허용한 곳의 스크립트만 실행하게 하는 설정(콘텐츠 보안 정책, CSP)이 없음",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "f0cde4faee56d39e",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html",
+        "http://127.0.0.1:4173/ok.html",
+        "http://127.0.0.1:4173/head-404.html",
+        "http://127.0.0.1:4173/sub.html",
+        "http://127.0.0.1:4173/board.html?id=1"
+      ],
+      "occurrences": 5
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "SEO",
+      "ruleId": "meta-description",
+      "source": "lighthouse",
+      "severity": "LOW",
+      "selector": null,
+      "target": null,
+      "evidence": null,
+      "description": "문서에 메타 설명이 없음",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "38e466e3e096ef92",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-bd70",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "IMAGE",
+      "ruleId": "image-not-rendered",
+      "source": "playwright",
+      "severity": "LOW",
+      "selector": "html > body > main > img:nth-of-type(3)",
+      "target": "http://127.0.0.1:4173/stats/record.do",
+      "evidence": "<img src=\"stats/record.do\" alt=\"\" width=\"1\" height=\"1\">",
+      "description": "[직접 확인 필요] 이미지로 표시되지 않음 (서버 응답은 정상 · 통계 수집용일 수 있음)",
+      "helpUrl": null,
+      "manualCheck": true,
+      "screenshot": "shots/J-20261119-101150-bd70/p1-2.jpg",
+      "fingerprint": "7ef409701636cca5",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    }
+  ],
+  "warnings": [
+    "게시판 글처럼 내용만 다르고 화면 모양이 같은 페이지 6개는 1개만 검사함 (상세 옵션에서 '모든 게시물'을 고르면 모두 검사)"
+  ]
+}

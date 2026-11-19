@@ -1,0 +1,426 @@
+{
+  "schemaVersion": "1.0",
+  "jobId": "J-20261119-101150-081c",
+  "tool": {
+    "name": "webops-runner",
+    "version": "0.1.0",
+    "browser": "159.0.8154.6",
+    "axeCore": null,
+    "lighthouse": null
+  },
+  "startedAt": "2026-11-19T01:11:52.369Z",
+  "finishedAt": "2026-11-19T01:11:57.475Z",
+  "durationMs": 5106,
+  "scope": {
+    "maxPages": 300,
+    "pageCount": 5,
+    "linksChecked": 13,
+    "scrolled": true,
+    "remaining": 0,
+    "check": "function",
+    "mobileUrl": null
+  },
+  "pages": [
+    {
+      "requestedUrl": "http://127.0.0.1:4173/broken.html",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 오류 페이지",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": 5,
+      "linksChecked": 5,
+      "imageCount": 5,
+      "scroll": {
+        "steps": 9,
+        "pageHeight": 5736,
+        "reachedEnd": true,
+        "extraRequests": 1
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 9,
+        "manualCheck": 1,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 3,
+          "MEDIUM": 5,
+          "LOW": 1
+        },
+        "byCategory": {
+          "IMAGE": 2,
+          "RESOURCE": 2,
+          "API": 1,
+          "SCRIPT": 2,
+          "LINK": 2
+        }
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/ok.html",
+      "pageUrl": "http://127.0.0.1:4173/ok.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 정상 페이지",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": 1,
+      "linksChecked": 1,
+      "imageCount": 1,
+      "scroll": {
+        "steps": 1,
+        "pageHeight": 720,
+        "reachedEnd": true,
+        "extraRequests": 0
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 0,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 0
+        },
+        "byCategory": {}
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/head-404.html",
+      "pageUrl": "http://127.0.0.1:4173/head-404.html",
+      "httpStatus": 200,
+      "title": "ok",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": 0,
+      "linksChecked": 0,
+      "imageCount": 0,
+      "scroll": {
+        "steps": 1,
+        "pageHeight": 720,
+        "reachedEnd": true,
+        "extraRequests": 0
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 0,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 0
+        },
+        "byCategory": {}
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/sub.html",
+      "pageUrl": "http://127.0.0.1:4173/sub.html",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 하위 페이지",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": 9,
+      "linksChecked": 9,
+      "imageCount": 0,
+      "scroll": {
+        "steps": 1,
+        "pageHeight": 720,
+        "reachedEnd": true,
+        "extraRequests": 0
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 1,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 1,
+          "LOW": 0
+        },
+        "byCategory": {
+          "LINK": 1
+        }
+      }
+    },
+    {
+      "requestedUrl": "http://127.0.0.1:4173/board.html?id=1",
+      "pageUrl": "http://127.0.0.1:4173/board.html?id=1",
+      "httpStatus": 200,
+      "title": "WebOps 테스트 - 게시판 글",
+      "scores": null,
+      "metrics": null,
+      "metricDetails": null,
+      "linkCount": 1,
+      "linksChecked": 1,
+      "imageCount": 0,
+      "scroll": {
+        "steps": 1,
+        "pageHeight": 720,
+        "reachedEnd": true,
+        "extraRequests": 0
+      },
+      "essentials": null,
+      "cert": null,
+      "mobile": null,
+      "summary": {
+        "total": 0,
+        "manualCheck": 0,
+        "bySeverity": {
+          "CRITICAL": 0,
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 0
+        },
+        "byCategory": {}
+      }
+    }
+  ],
+  "summary": {
+    "total": 9,
+    "manualCheck": 1,
+    "bySeverity": {
+      "CRITICAL": 0,
+      "HIGH": 3,
+      "MEDIUM": 5,
+      "LOW": 1
+    },
+    "byCategory": {
+      "RESOURCE": 2,
+      "API": 1,
+      "IMAGE": 2,
+      "SCRIPT": 2,
+      "LINK": 2
+    }
+  },
+  "findings": [
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-081c",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "RESOURCE",
+      "ruleId": "resource-failed",
+      "source": "playwright",
+      "severity": "HIGH",
+      "selector": null,
+      "target": "http://127.0.0.1:4173/css/missing.css",
+      "evidence": null,
+      "description": "화면 디자인(CSS) 파일을 불러오지 못함: 없는 파일(404)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "0fd210299f69a7cf",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-081c",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "RESOURCE",
+      "ruleId": "resource-failed",
+      "source": "playwright",
+      "severity": "HIGH",
+      "selector": null,
+      "target": "http://127.0.0.1:4173/js/missing-ui.js",
+      "evidence": null,
+      "description": "기능 스크립트(JS) 파일을 불러오지 못함: 없는 파일(404)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "0ab24466f4bd996c",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-081c",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "API",
+      "ruleId": "api-failed",
+      "source": "playwright",
+      "severity": "HIGH",
+      "selector": null,
+      "target": "http://127.0.0.1:4173/api/notice-list.do",
+      "evidence": "GET http://127.0.0.1:4173/api/notice-list.do",
+      "description": "데이터를 불러오지 못함: 서버 오류(500)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "33fc84141c7f7085",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-081c",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "IMAGE",
+      "ruleId": "image-broken",
+      "source": "playwright",
+      "severity": "MEDIUM",
+      "selector": "html > body > main > img:nth-of-type(1)",
+      "target": "http://127.0.0.1:4173/img/main-visual.png",
+      "evidence": "<img src=\"img/main-visual.png\" width=\"300\" height=\"120\">",
+      "description": "이미지를 불러오지 못함: 없는 파일(404)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-081c/p1-1.jpg",
+      "fingerprint": "72b8ba8e79337e8c",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-081c",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "IMAGE",
+      "ruleId": "image-broken",
+      "source": "playwright",
+      "severity": "MEDIUM",
+      "selector": "#lazy-banner",
+      "target": "http://127.0.0.1:4173/img/lazy-banner.png",
+      "evidence": "<img id=\"lazy-banner\" src=\"img/lazy-banner.png\" loading=\"lazy\" alt=\"아래쪽 배너\" width=\"300\" height=\"100\">",
+      "description": "이미지를 불러오지 못함: 없는 파일(404)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-081c/p1-3.jpg",
+      "fingerprint": "cab29469e20fac97",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-081c",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "SCRIPT",
+      "ruleId": "js-error",
+      "source": "playwright",
+      "severity": "MEDIUM",
+      "selector": null,
+      "target": null,
+      "evidence": "undefinedFunctionForTest is not defined",
+      "description": "화면 동작 중 스크립트 오류 발생",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "31c5a9b66c2bf8eb",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-081c",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "LINK",
+      "ruleId": "link-broken",
+      "source": "webops-runner",
+      "severity": "MEDIUM",
+      "selector": "body > main > ul:nth-of-type(2) > li:nth-of-type(2) > a",
+      "target": "http://127.0.0.1:4173/no-such-page.html",
+      "evidence": "링크 문구: \"깨진 링크\"",
+      "description": "깨진 링크: 없는 페이지(404)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-081c/p1-4.jpg",
+      "fingerprint": "8169db692ab161b0",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-081c",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "LINK",
+      "ruleId": "link-broken",
+      "source": "webops-runner",
+      "severity": "MEDIUM",
+      "selector": "#footer > a",
+      "target": "http://127.0.0.1:4173/common-missing.html",
+      "evidence": "링크 문구: \"개인정보처리방침\"",
+      "description": "깨진 링크: 없는 페이지(404)",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": "shots/J-20261119-101150-081c/p1-5.jpg",
+      "fingerprint": "2fb47f0ace2c3766",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html",
+        "http://127.0.0.1:4173/sub.html"
+      ],
+      "occurrences": 2
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-081c",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "SCRIPT",
+      "ruleId": "console-error",
+      "source": "playwright",
+      "severity": "LOW",
+      "selector": null,
+      "target": "http://127.0.0.1:4173/broken.html",
+      "evidence": "공지사항 목록을 그리지 못했습니다 (테스트)",
+      "description": "브라우저가 오류 메시지를 남김",
+      "helpUrl": null,
+      "manualCheck": false,
+      "screenshot": null,
+      "fingerprint": "7c864a1b272d3296",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    },
+    {
+      "schemaVersion": "1.0",
+      "jobId": "J-20261119-101150-081c",
+      "pageUrl": "http://127.0.0.1:4173/broken.html",
+      "category": "IMAGE",
+      "ruleId": "image-not-rendered",
+      "source": "playwright",
+      "severity": "LOW",
+      "selector": "html > body > main > img:nth-of-type(3)",
+      "target": "http://127.0.0.1:4173/stats/record.do",
+      "evidence": "<img src=\"stats/record.do\" alt=\"\" width=\"1\" height=\"1\">",
+      "description": "[직접 확인 필요] 이미지로 표시되지 않음 (서버 응답은 정상 · 통계 수집용일 수 있음)",
+      "helpUrl": null,
+      "manualCheck": true,
+      "screenshot": "shots/J-20261119-101150-081c/p1-2.jpg",
+      "fingerprint": "7ef409701636cca5",
+      "pages": [
+        "http://127.0.0.1:4173/broken.html"
+      ],
+      "occurrences": 1
+    }
+  ],
+  "warnings": [
+    "게시판 글처럼 내용만 다르고 화면 모양이 같은 페이지 6개는 1개만 검사함 (상세 옵션에서 '모든 게시물'을 고르면 모두 검사)"
+  ]
+}

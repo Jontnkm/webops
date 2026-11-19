@@ -46,6 +46,8 @@
   - `templates/report.html` + `static/css/report.css` 인쇄용(A4) 보고서. 1쪽은 인포그래픽 요약(`.page-one`: 품질 점수 원형판·핵심 숫자·지난 검사 비교 띠·심각도 쌓은 막대·영역별 결과 카드), 2쪽부터 먼저 고칠 것 TOP 5·페이지별 점수, 이어서 영역별 장(문제가 있는 장은 새 쪽: 세부 항목표/속도 지표 → 할 일 → 문제 상세). 그래프 값은 `web/ReportCharts`(모델 `chart`)가 계산. 1쪽은 A4 한 장(내용 높이 약 1009px) 안에 들어가야 함 — 요소를 늘리면 인쇄 모양으로 높이 확인. `/scans/{id}/report.pdf`가 실행기 `pdf.js`로 PDF 생성(`output/report-<id>.pdf`에 한 번 만들면 재사용).
   - 화면 경로: `/scans/{id}/shots/{name}.jpg` 캡처, `/scans/{id}/print` 인쇄용, `/scans/{id}/report.pdf`.
 
+- `demo/` GitHub Pages용 정적 데모(사용자 요청 11/19). `node demo/build-demo.mjs`(서버 켠 상태)가 테스트 페이지 검사만 골라 `demo/site`에 화면·캡처·PDF·JSON을 저장, 주소를 상대 경로로 바꾸고 서버 기능(검사·검색·삭제·정기 검사)은 `demo.js`가 막고 안내. 테스트 페이지(127.0.0.1:4173) 외 주소가 섞인 검사는 넣지 않고 멈춤. 배포는 `.github/workflows/demo-pages.yml`(Settings → Pages → Source: GitHub Actions 필요), 주소 https://jontnkm.github.io/webops/. 화면을 고치면 데모도 다시 만들 것. 자세한 건 `demo/README.md`.
+
 ## 실행
 
 ```bash
