@@ -21,9 +21,9 @@
       </form>
       <a class="btn" th:href="@{/scans/{id}/report.json(id=${job.id})}" title="개발자용 원본 데이터(JSON)">원본 데이터</a>
       <a class="btn btn-primary" th:href="@{/}">새 검사</a>
-      <!-- 맨 오른쪽: PDF 보고서 바로 받기 (만드는 데 몇 초 걸려 진행 표시) -->
+      <!-- 맨 오른쪽: PDF 보고서 바로 받기 (만드는 데 몇 초 걸려 진행 표시). 웹접근성 점검이면 접근성 보고서(KWCAG 2.2) -->
       <a class="btn btn-report" id="pdf-btn" data-pdf th:href="@{/scans/{id}/report.pdf(id=${job.id})}"
-         title="검사 결과를 A4 보고서로 정리한 PDF 파일을 내려받습니다"><svg class="btn-ico" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 2v8M4.5 6.5 8 10l3.5-3.5M3 13h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>PDF 보고서 다운로드</a>
+         th:title="${job.type.name() == 'A11Y'} ? 'KWCAG 2.2 검사항목 기준으로 정리한 접근성 보고서 PDF를 내려받습니다' : '검사 결과를 A4 보고서로 정리한 PDF 파일을 내려받습니다'"><svg class="btn-ico" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 2v8M4.5 6.5 8 10l3.5-3.5M3 13h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>PDF 보고서 다운로드</a>
     </div>
   </div>
 </header>
@@ -328,8 +328,8 @@
   <section class="kwcag-board" aria-labelledby="kwcag-title" th:with="kv=${view.kwcag}" th:if="${view.kwcag.measured}">
     <div class="kb-head">
       <h2 id="kwcag-title">접근성 지침 검사항목 <span class="muted small">KWCAG 2.2 · 33개 항목</span></h2>
-      <!-- 접근성만 따로: KWCAG 2.2 검사항목 · 직접 확인 체크리스트 · 접근성 문제 상세 -->
-      <a class="btn btn-sm btn-report" data-pdf th:if="${kv.measured}" th:href="@{/scans/{id}/a11y-report.pdf(id=${job.id})}"
+      <!-- 접근성만 따로 (종합점검일 때만. 웹접근성 점검은 머리글의 'PDF 보고서 다운로드'가 곧 접근성 보고서) -->
+      <a class="btn btn-sm btn-report" data-pdf th:if="${kv.measured and job.type.name() == 'ALL'}" th:href="@{/scans/{id}/a11y-report.pdf(id=${job.id})}"
          title="KWCAG 2.2 검사항목 기준으로 정리한 접근성 보고서 PDF를 내려받습니다"><svg class="btn-ico" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 2v8M4.5 6.5 8 10l3.5-3.5M3 13h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>접근성 보고서 PDF</a>
     </div>
     <div class="kb-summary" th:if="${kv.measured}">
@@ -350,13 +350,75 @@
             <span class="kb-name" th:text="${r.item.name}">텍스트 콘텐츠의 명도 대비</span>
             <span class="kb-status" th:text="${r.status}">문제 56건</span>
           </button>
-          <div class="kb-row" th:unless="${r.tone == 'bad'}">
+          <!-- 확인 필요 · 직접 확인: 누르면 확인 가이드 팝업 (어디를 · 어떤 순서로 · 무엇이 문제인지 + 확인 필요면 보류된 위치) -->
+          <button type="button" class="kb-row kb-guide-row" th:if="${r.hasGuide}" aria-haspopup="dialog"
+                  th:attr="data-open=${r.guideId}">
+            <span class="kb-code" th:text="${r.item.code}">1.4.3</span>
+            <span class="kb-name" th:text="${r.item.name}">텍스트 콘텐츠의 명도 대비</span>
+            <span class="kb-status" th:text="${r.status}">확인 필요 1곳</span>
+          </button>
+          <div class="kb-row" th:unless="${r.tone == 'bad' or r.hasGuide}">
             <span class="kb-code" th:text="${r.item.code}">1.1.1</span>
             <span class="kb-name" th:text="${r.item.name}">적절한 대체 텍스트 제공</span>
             <span class="kb-status" th:text="${r.status}">자동 검사 이상 없음</span>
           </div>
-          <!-- 직접 확인할 항목: 무엇을 보면 되는지 -->
-          <p class="kb-check" th:if="${r.tone == 'manual' or r.tone == 'warn'}" th:text="${r.item.check}">확인 방법</p>
+          <!-- 직접 확인할 항목: 무엇을 보면 되는지 한 줄 요약 (자세한 순서는 줄을 눌러 가이드에서) -->
+          <p class="kb-check" th:if="${r.tone == 'manual' or r.tone == 'warn'}">
+            <span th:text="${r.item.check}">확인 방법</span>
+            <span class="kb-guide-hint" th:if="${r.hasGuide}">· 눌러서 확인 순서 보기</span>
+          </p>
+
+          <!-- 확인 가이드 팝업 내용 -->
+          <template th:if="${r.hasGuide}" th:id="${r.guideId}" th:with="gd=${r.guide}">
+            <div class="detail kw-guide" th:attr="data-title='KWCAG ' + ${r.item.code} + ' ' + ${r.item.name} + ' · 확인 가이드'">
+              <div class="detail-meta">
+                <span class="kb-status-badge" th:classappend="${'kb-' + r.tone}" th:text="${r.status}">확인 필요 1곳</span>
+                <span th:text="${r.item.principle} + ' · ' + ${r.item.guideline}">인식의 용이성 · 명료성</span>
+              </div>
+              <p class="kw-guide-note" th:if="${r.tone == 'warn'}"
+                 th:text="'자동 검사가 ' + ${r.manual} + '곳을 찾았지만 지침에 맞는지 판단하지 못했습니다. 아래 위치를 열어 확인 순서대로 직접 보고 판단해 주세요.'">안내</p>
+              <p class="kw-guide-note" th:if="${r.tone == 'manual'}">
+                자동 검사로는 판단할 수 없는 항목입니다. 아래 순서대로 직접 확인해 주세요.
+              </p>
+
+              <!-- 확인 필요: 자동 검사가 보류한 실제 위치 (누르면 위치 · 화면 캡처) -->
+              <div class="related kw-pending" th:unless="${#lists.isEmpty(r.pending)}">
+                <p class="guide-label">확인할 위치 <span class="muted">누르면 위치와 화면 캡처를 볼 수 있습니다</span></p>
+                <ul class="related-list">
+                  <li th:each="pg : ${r.pending}">
+                    <button type="button" class="related-item" th:attr="data-open='tpl-' + ${pg.id}">
+                      <span class="related-title" th:text="${pg.title}">확인 필요</span>
+                      <span class="related-count" th:text="${pg.count} + '곳'">1곳</span>
+                      <span aria-hidden="true">›</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="guide">
+                <div class="guide-row">
+                  <p class="guide-label">확인할 곳</p>
+                  <p th:text="${gd.where}">어디</p>
+                </div>
+                <div class="guide-row guide-fix">
+                  <p class="guide-label">확인 순서</p>
+                  <ol class="kw-steps">
+                    <li th:each="s : ${gd.steps}" th:text="${s}">순서</li>
+                  </ol>
+                </div>
+                <div class="guide-row kw-fail">
+                  <p class="guide-label">이런 경우 문제</p>
+                  <p th:text="${gd.fail}">문제 기준</p>
+                </div>
+                <div class="guide-row" th:if="${gd.tools}">
+                  <p class="guide-label">도움이 되는 도구</p>
+                  <p th:text="${gd.tools}">도구</p>
+                </div>
+              </div>
+              <p class="small muted">확인한 결과는 접근성 보고서 PDF의 33개 검사항목 표 '확인' 칸에 적어 두면 됩니다.
+                검사항목 해석은 웹 접근성 인증 심사의 판정과 다를 수 있습니다.</p>
+            </div>
+          </template>
         </li>
       </ul>
     </div>
@@ -692,6 +754,13 @@
   </dialog>
 </template>
 
+<!-- 팝업이 3개 이상 열려 있으면 오른쪽 아래에 '모든 팝업 닫기' (사용자 요청 11/19) -->
+<button type="button" id="close-all-popups" class="close-all-popups" hidden>
+  <span class="cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span>
+  <span class="cap-label">모든 팝업 닫기</span>
+  <span class="cap-count" id="close-all-count"></span>
+</button>
+
 <script>
   // 오른쪽 위 선택 상자(유형 · 심각도 · 정렬)와 왼쪽 검사 항목 카드로 개선 방안 · 문제 목록을 걸러 보고 정렬한다 (새로고침 없음).
   (() => {
@@ -827,16 +896,19 @@
     }
 
     // ---------- 상세 팝업 (여러 개를 겹쳐 열 수 있음) ----------
-    // - 누른 버튼이 있는 영역(왼쪽/오른쪽)의 가운데에 뜬다. 팝업 안에서 누르면 그 팝업과 같은 쪽에 뜬다.
-    // - 새 팝업은 이전 팝업 위에 조금 비켜서 겹쳐 뜨고, 이전 팝업은 그대로 남는다.
-    // - 왼쪽·오른쪽 팝업은 서로 영향을 주지 않으며, 닫기는 각 팝업의 × 버튼으로만 한다.
+    // - 새 팝업은 이미 열린 팝업을 가리지 않는 빈자리를 찾아 뜬다 (누른 버튼이 있는 영역 가운데에 가장 가까운 곳).
+    //   원래 크기로 자리가 없으면 폭을 줄여 다시 찾고, 그래도 없으면 브라우저 정가운데에 뜬다 (사용자 요청 11/19).
+    // - 한 번 뜬 팝업은 다른 팝업을 열거나 닫아도 움직이지 않는다. 제목 줄을 끌어 옮길 수 있다.
+    // - 가장 최근에 열린(또는 누른) 팝업이 맨 앞(z-index 가장 큼). 닫기는 각 팝업의 × 버튼으로만 한다.
     // - 이미 열려 있는 내용을 다시 누르면 새로 만들지 않고 그 팝업을 맨 앞으로 가져온다.
     const shell = document.getElementById('dialog-shell');
     const rightPane = document.getElementById('pane-right');
     const openPopups = [];   // { el, key, pane, opener }
     let zTop = 100;
     let seq = 0;
-    const STEP = 28;         // 겹쳐 뜰 때 비켜나는 거리(px)
+    const MARGIN = 8;        // 화면 가장자리 여백(px)
+    const GAP = 12;          // 팝업끼리 띄우는 간격(px)
+    const SCAN = 16;         // 빈자리를 찾을 때 훑는 간격(px)
 
     function paneRect(pane) {
       const twoPanes = getComputedStyle(pane).overflowY === 'auto';
@@ -845,21 +917,83 @@
         : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
     }
 
-    function place(p) {
-      const r = paneRect(p.pane);
-      const sameSide = openPopups.filter((o) => o.pane === p.pane);
-      const n = sameSide.length;
-      const i = sameSide.indexOf(p);
-      // 같은 쪽 팝업들이 계단처럼 보이도록 가운데를 기준으로 비켜 놓는다
-      const offset = (i - (n - 1) / 2) * STEP;
-      const room = (n - 1) * STEP;
-      p.el.style.left = (r.left + r.width / 2 + offset) + 'px';
-      p.el.style.top = (r.top + r.height / 2 + offset) + 'px';
-      p.el.style.width = Math.max(280, Math.min(r.width - 32 - room, 760)) + 'px';
-      p.el.style.maxHeight = Math.max(240, r.height - 32 - room) + 'px';
+    // 끌어서 옮긴 팝업: 화면 밖으로 나가지 않게 (가운데 기준 좌표, 좌우 8px 여백 안 · 위는 8px 아래부터, 아래로는 제목 줄까지 보임)
+    function clampMoved(p, left, top) {
+      const r = p.el.getBoundingClientRect();
+      const hw = r.width / 2, hh = r.height / 2, M = 8;
+      const l = Math.min(Math.max(left, M + hw), Math.max(M + hw, window.innerWidth - M - hw));
+      const t = Math.min(Math.max(top, M + hh), Math.max(M + hh, window.innerHeight - 56 + hh));
+      p.el.style.left = l + 'px';
+      p.el.style.top = t + 'px';
     }
 
-    const placeAll = () => openPopups.forEach(place);
+    // 새 팝업 자리 정하기: 다른 팝업과 겹치지 않는 자리 중 영역 가운데에 가장 가까운 곳
+    function autoPlace(p) {
+      const r = paneRect(p.pane);
+      const W = window.innerWidth, H = window.innerHeight;
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const others = openPopups.filter((o) => o !== p).map((o) => o.el.getBoundingClientRect());
+      const full = Math.max(280, Math.min(r.width - 32, 760));
+      p.el.style.maxHeight = Math.max(240, Math.min(r.height, H) - 32) + 'px';
+      // 원래 폭 → 좁힌 폭 순서로 시도 (좁힌 폭도 280px보다 작게는 줄이지 않음)
+      const widths = [...new Set([full, Math.min(full, 560), Math.min(full, 440)])];
+      for (const w of widths) {
+        p.el.style.width = w + 'px';
+        const box = p.el.getBoundingClientRect();
+        const hw = box.width / 2, hh = box.height / 2;
+        const free = (x, y) => others.every((o) =>
+          x + hw + GAP <= o.left || x - hw - GAP >= o.right || y + hh + GAP <= o.top || y - hh - GAP >= o.bottom);
+        const minX = MARGIN + hw, maxX = W - MARGIN - hw, minY = MARGIN + hh, maxY = H - MARGIN - hh;
+        if (maxX < minX || maxY < minY) continue;
+        const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+        let best = null, bestD = Infinity;
+        const tryAt = (x, y) => {
+          if (!free(x, y)) return;
+          const d = (x - cx) ** 2 + (y - cy) ** 2;
+          if (d < bestD) { bestD = d; best = [x, y]; }
+        };
+        tryAt(clamp(cx, minX, maxX), clamp(cy, minY, maxY));
+        if (!best) {
+          // 화면 전체를 일정 간격으로 훑고, 다른 팝업 바로 옆(위·아래·왼쪽·오른쪽) 자리도 따로 본다
+          for (let y = minY; y <= maxY + 0.5; y += SCAN) for (let x = minX; x <= maxX + 0.5; x += SCAN) tryAt(Math.min(x, maxX), Math.min(y, maxY));
+          for (const o of others) {
+            const ys = [clamp(cy, minY, maxY), clamp(o.top + hh, minY, maxY), clamp(o.bottom - hh, minY, maxY)];
+            const xs = [clamp(cx, minX, maxX), clamp(o.left + hw, minX, maxX), clamp(o.right - hw, minX, maxX)];
+            for (const y of ys) { tryAt(clamp(o.left - GAP - hw, minX, maxX), y); tryAt(clamp(o.right + GAP + hw, minX, maxX), y); }
+            for (const x of xs) { tryAt(x, clamp(o.top - GAP - hh, minY, maxY)); tryAt(x, clamp(o.bottom + GAP + hh, minY, maxY)); }
+          }
+        }
+        if (best) {
+          p.el.style.left = best[0] + 'px';
+          p.el.style.top = best[1] + 'px';
+          return;
+        }
+      }
+      // 빈자리가 없으면 원래 폭으로 브라우저 정가운데
+      p.el.style.width = full + 'px';
+      p.el.style.left = (W / 2) + 'px';
+      p.el.style.top = (H / 2) + 'px';
+      clampMoved(p, W / 2, H / 2);
+    }
+
+    // 화면 크기가 바뀌면 열린 팝업은 자리를 지키되 화면 안으로만 당긴다
+    const keepInView = () => openPopups.forEach((p) =>
+      clampMoved(p, parseFloat(p.el.style.left), parseFloat(p.el.style.top)));
+
+    // 팝업이 3개 이상이면 '모든 팝업 닫기' 버튼을 보인다
+    const closeAllBtn = document.getElementById('close-all-popups');
+    const closeAllCount = document.getElementById('close-all-count');
+    function syncCloseAll() {
+      closeAllBtn.hidden = openPopups.length < 3;
+      closeAllCount.textContent = openPopups.length;
+      closeAllBtn.setAttribute('aria-label', '열린 팝업 ' + openPopups.length + '개 모두 닫기');
+    }
+    closeAllBtn.addEventListener('click', () => {
+      const opener = openPopups[0]?.opener;
+      for (const p of openPopups.splice(0)) { p.el.close(); p.el.remove(); }
+      syncCloseAll();
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+    });
 
     function bringToFront(p) {
       p.el.style.zIndex = String(++zTop);
@@ -895,12 +1029,47 @@
       openPopups.push(p);
       el.show();
       bringToFront(p);
-      placeAll();
+      autoPlace(p);
+      syncCloseAll();
       title.focus();
+      // 위치 캡처 그림이 늦게 불러와져 팝업이 커지면, 아직 옮기지 않은 팝업은 빈자리를 다시 찾는다
+      for (const img of el.querySelectorAll('img')) {
+        if (!img.complete) img.addEventListener('load', () => { if (!p.dragged) autoPlace(p); }, { once: true });
+      }
 
       el.addEventListener('pointerdown', () => bringToFront(p));
       el.addEventListener('focusin', () => bringToFront(p));
       el.querySelector('.dialog-close').addEventListener('click', () => closePopup(p));
+
+      // 제목 줄을 잡고 끌면 팝업을 옮긴다. 제목 줄을 더블클릭하면 다른 팝업을 가리지 않는 빈자리로 다시 놓는다.
+      const head = el.querySelector('.dialog-head');
+      head.title = '끌어서 옮길 수 있습니다 · 더블클릭하면 빈자리로 다시 놓음';
+      head.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 || e.target.closest('.dialog-close')) return;
+        e.preventDefault();
+        bringToFront(p);
+        const sx = e.clientX, sy = e.clientY;
+        const sl = parseFloat(el.style.left), st = parseFloat(el.style.top);
+        head.setPointerCapture(e.pointerId);
+        el.classList.add('is-dragging');
+        const move = (ev) => {
+          p.dragged = true;
+          clampMoved(p, sl + ev.clientX - sx, st + ev.clientY - sy);
+        };
+        const up = () => {
+          head.removeEventListener('pointermove', move);
+          head.removeEventListener('pointerup', up);
+          head.removeEventListener('pointercancel', up);
+          el.classList.remove('is-dragging');
+        };
+        head.addEventListener('pointermove', move);
+        head.addEventListener('pointerup', up);
+        head.addEventListener('pointercancel', up);
+      });
+      head.addEventListener('dblclick', (e) => {
+        if (e.target.closest('.dialog-close')) return;
+        autoPlace(p);
+      });
     }
 
     function closePopup(p) {
@@ -909,7 +1078,7 @@
       openPopups.splice(i, 1);
       p.el.close();
       p.el.remove();
-      placeAll();
+      syncCloseAll();
       // 초점: 이 팝업을 열었던 버튼으로, 그 버튼이 없으면 남은 팝업 중 맨 앞으로
       if (p.opener?.isConnected) {
         p.opener.focus({ preventScroll: true });
@@ -925,7 +1094,7 @@
       const b = e.target.closest('[data-open]');
       if (b) openDetail(b.dataset.open, b);
     });
-    window.addEventListener('resize', placeAll);
+    window.addEventListener('resize', keepInView);
 
     // 개선 방안 항목: 목록을 그 분류로 걸러 위치를 보여 주고, 상세 팝업을 연다
     for (const b of document.querySelectorAll('[data-goto]')) {

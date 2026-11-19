@@ -787,11 +787,28 @@ public record ResultView(
      * tone: bad(자동 검사에서 문제) / warn(자동 판단이 어려워 확인 필요한 곳이 나옴) / ok(자동 검사 이상 없음)
      *       / manual(자동 검사 대상이 아님 → 직접 확인) / skip(접근성을 측정하지 않음)
      */
-    public record KwcagRow(Kwcag.Item item, boolean automated, long violations, long manual, String tone, String status) {
+    /** pending: 자동 검사가 판단을 보류한 곳 묶음(확인 필요일 때, 누르면 위치 · 캡처를 볼 수 있음) */
+    public record KwcagRow(Kwcag.Item item, boolean automated, long violations, long manual, String tone, String status,
+                           List<RuleGroup> pending) {
 
         /** 화면 걸러 보기 값 (K:번호) */
         public String filterCode() {
             return "K:" + item.code();
+        }
+
+        /** 확인 가이드 (확인 필요 · 직접 확인일 때 팝업으로) */
+        public KwcagGuide.Guide guide() {
+            return KwcagGuide.of(item.code());
+        }
+
+        /** 확인 가이드 팝업의 template id (점은 하이픈으로) */
+        public String guideId() {
+            return "tpl-kw-" + item.code().replace('.', '-');
+        }
+
+        /** 확인 가이드를 여는 줄인지 (확인 필요 · 직접 확인이고 가이드가 있을 때) */
+        public boolean hasGuide() {
+            return ("warn".equals(tone) || "manual".equals(tone)) && guide() != null;
         }
     }
 
@@ -848,7 +865,7 @@ public record ResultView(
                 else if (m > 0) { tone = "warn"; status = "확인 필요 " + m + "곳"; toCheck++; }
                 else if (auto) { tone = "ok"; status = "자동 검사 이상 없음"; ok++; }
                 else { tone = "manual"; status = "직접 확인"; toCheck++; }
-                rows.add(new KwcagRow(it, auto, v, m, tone, status));
+                rows.add(new KwcagRow(it, auto, v, m, tone, status, m > 0 ? kwcagGroups(it.code(), true) : List.of()));
             }
             principles.add(new KwcagPrinciple(principles.size() + 1, p, rows));
         }
@@ -857,13 +874,18 @@ public record ResultView(
 
     /** 이 검사항목에 해당하는 접근성 문제 곳 수 (manual: 직접 확인 필요 항목만 / 아니면 확정된 문제만) */
     private long kwcagCount(String code, boolean manual) {
+        return kwcagGroups(code, manual).stream().mapToLong(RuleGroup::count).sum();
+    }
+
+    /** 이 검사항목에 해당하는 접근성 문제 묶음 (manual: 직접 확인 필요 항목만 / 아니면 확정된 문제만) */
+    private List<RuleGroup> kwcagGroups(String code, boolean manual) {
         return groups.stream()
                 .filter(g -> g.manual() == manual && "ACCESSIBILITY".equals(g.category()))
                 .filter(g -> {
                     A11yGuideline.Item gl = A11yGuideline.of(g.ruleId());
                     return gl != null && code.equals(gl.kwcagCode());
                 })
-                .mapToLong(RuleGroup::count).sum();
+                .toList();
     }
 
     /** 화면 걸러 보기용: 개선 방안 한 줄(묶음 번호)의 KWCAG 번호 */

@@ -232,7 +232,10 @@ public class ScanController {
 
     @GetMapping("/scans/{id:" + JOB_ID_PATTERN + "}/report.pdf")
     public ResponseEntity<FileSystemResource> pdf(@PathVariable String id) {
-        return pdfOf(findDoneJob(id), "print", "report", "webops-report-");
+        ScanJob job = findDoneJob(id);
+        // 웹접근성 점검만 한 검사는 'PDF 보고서'가 곧 접근성 보고서 (사용자 요청 11/19)
+        if (job.getType() == ScanType.A11Y) return pdfOf(job, "print-a11y", "a11y", "webops-accessibility-");
+        return pdfOf(job, "print", "report", "webops-report-");
     }
 
     /** 접근성 보고서 인쇄용 화면 (KWCAG 2.2 검사항목별 결과 · 직접 확인 체크리스트 · 접근성 문제 상세) */
