@@ -34,11 +34,26 @@ async function save(rel, data) {
   await writeFile(file, data);
 }
 
+// 데모 안내 띠 옆 버튼: 첫 화면은 '결과 예시 보기'(종합점검 결과로), 결과 화면은 '다른 예시 보기'(첫 화면 최근 검사 목록으로)
+const FEATURED = 'J-20261119-101150-bd70';
+const ARROW = '<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 10h11M11 5.5 15.5 10 11 14.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const CHART = '<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3.5 16.5h13M6 13.5V9M10 13.5V5.5M14 13.5v-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+const GRID = '<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><rect x="3.5" y="3.5" width="5.5" height="5.5" rx="1.4" fill="none" stroke="currentColor" stroke-width="2"/><rect x="11" y="3.5" width="5.5" height="5.5" rx="1.4" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3.5" y="11" width="5.5" height="5.5" rx="1.4" fill="none" stroke="currentColor" stroke-width="2"/><rect x="11" y="11" width="5.5" height="5.5" rx="1.4" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+function demoDock(prefix, isHome) {
+  const cta = isHome
+    ? `<a class="demo-cta" href="scans/${FEATURED}.html"><span class="demo-cta-ico">${CHART}</span><span>결과 예시 보기</span><span class="demo-cta-arrow">${ARROW}</span></a>`
+    : `<a class="demo-cta demo-cta-ghost" href="${prefix}index.html#recent"><span class="demo-cta-ico">${GRID}</span><span>다른 예시 보기</span><span class="demo-cta-arrow">${ARROW}</span></a>`;
+  return `<div class="demo-dock">
+  <p class="demo-note"><b>데모</b><span>저장된 예시 화면 · 실제 검사는 실행되지 않음</span><span class="long">· 검사 대상: 일부러 오류를 넣은 테스트 페이지</span></p>
+  ${cta}
+</div>`;
+}
+
 // 모든 페이지에 넣는 데모 안내 띠 + 서버가 필요한 버튼 막기
-function injectDemo(html, prefix) {
+function injectDemo(html, prefix, isHome = false) {
   return html
     .replace('</head>', `  <link rel="stylesheet" href="${prefix}demo.css">\n</head>`)
-    .replace(/<body([^>]*)>/, `<body$1>\n<div class="demo-bar" role="note"><b>데모</b><span>저장된 예시 화면 · 실제 검사는 실행되지 않음</span><span class="long">· 검사 대상: 일부러 오류를 넣은 테스트 페이지</span></div>`)
+    .replace(/<body([^>]*)>/, `<body$1>\n${demoDock(prefix, isHome)}`)
     .replace('</body>', `<script src="${prefix}demo.js"></script>\n</body>`);
 }
 
@@ -88,7 +103,7 @@ async function buildHome() {
       .replace(/<ul class="recent-grid">[\s\S]*?<\/ul>\s*(<!--[^>]*-->\s*)?(<nav class="pager"[\s\S]*?<\/nav>)?/, `<ul class="recent-grid">\n${list}\n    </ul>\n\n    ${pager}\n`)
       .replace(/(<span class="rt-label">최근 검사 기록<\/span>\s*<b>)\d+(<\/b>)/, `$1${SCANS.length}$2`)
       .replace(/<p class="recent-empty"[\s\S]*?<\/p>/, '');
-    html = injectDemo(rewrite(html, '', false), '');
+    html = injectDemo(rewrite(html, '', false), '', true);
     await save(fileOf(n), html);
   }
 }
