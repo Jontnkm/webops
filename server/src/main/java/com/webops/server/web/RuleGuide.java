@@ -273,6 +273,81 @@ public final class RuleGuide {
         put("crawlable-anchors", "검색엔진이 따라갈 수 없는 링크", "href 있는 링크로 바꾸기", DEV,
                 "href 없이 스크립트로만 이동하는 링크는 검색엔진이 따라가지 못합니다.",
                 "이동할 주소를 href에 적어 주세요.", "<a href=\"javascript:goPage(3)\">\n→ <a href=\"/list?page=3\">");
+        // ===================== 보안 · 모바일 환경 =====================
+        put("https-not-used", "보안 연결(https)을 쓰지 않음", "https 보안 연결 적용", SERVER,
+                "주소가 http://로 열려 입력한 정보(검색어·로그인·신청 내용)가 암호화되지 않고 전송됩니다. 브라우저 주소창에 '주의 요함'이 표시됩니다.",
+                "보안 인증서(SSL/TLS)를 설치해 https로 서비스하고, http로 들어오면 https로 넘기도록 서버를 설정해 주세요.",
+                null);
+        put("http-no-redirect", "http로 접속하면 https로 넘어가지 않음", "http → https 자동 넘김 설정", SERVER,
+                "http:// 주소로도 사이트가 열려, 그 경로로 들어온 방문자는 암호화되지 않은 연결을 쓰게 됩니다.",
+                "웹 서버에서 http 요청을 https 주소로 넘기는(301 리다이렉트) 설정을 추가해 주세요.",
+                "# Apache\nRewriteRule ^(.*)$ https://%{HTTP_HOST}$1 [R=301,L]\n→ # Nginx\nreturn 301 https://$host$request_uri;");
+        put("hsts-missing", "항상 https로만 접속하게 하는 설정(HSTS)이 없음", "HSTS 헤더 추가", SERVER,
+                "처음 한 번 http로 접속하는 순간을 노려 연결을 가로챌 수 있습니다. HSTS를 두면 브라우저가 이 사이트를 늘 https로만 엽니다.",
+                "응답 헤더에 Strict-Transport-Security를 추가해 주세요. (https가 모든 하위 주소에서 되는지 먼저 확인)",
+                "(없음)\n→ Strict-Transport-Security: max-age=31536000; includeSubDomains");
+        put("clickjacking-unprotected", "다른 사이트가 이 페이지를 몰래 끼워 넣을 수 있음", "클릭재킹 방지 헤더 추가", SERVER,
+                "다른 사이트가 이 페이지를 투명하게 덮어 씌워 방문자가 모르는 사이 버튼을 누르게 만들 수 있습니다(클릭재킹).",
+                "응답 헤더에 X-Frame-Options: SAMEORIGIN을 넣거나, 콘텐츠 보안 정책(CSP)에 frame-ancestors 'self'를 넣어 주세요.",
+                "(없음)\n→ X-Frame-Options: SAMEORIGIN");
+        put("nosniff-missing", "파일 형식 위장을 막는 설정이 없음", "X-Content-Type-Options 헤더 추가", SERVER,
+                "브라우저가 파일 내용을 보고 형식을 짐작하다가, 그림·글로 위장한 스크립트를 실행할 수 있습니다.",
+                "응답 헤더에 X-Content-Type-Options: nosniff를 추가해 주세요.",
+                "(없음)\n→ X-Content-Type-Options: nosniff");
+        put("csp-missing", "콘텐츠 보안 정책(CSP)이 없음", "콘텐츠 보안 정책 적용 검토", DEV,
+                "허용한 곳의 스크립트만 실행하게 하는 장치가 없어, 악성 스크립트가 끼어들었을 때(XSS) 피해를 줄이지 못합니다.",
+                "사이트가 쓰는 스크립트·글꼴 출처를 정리해 Content-Security-Policy 헤더를 단계적으로 적용해 주세요. 처음에는 Report-Only로 시험하는 것이 안전합니다.",
+                "(없음)\n→ Content-Security-Policy: default-src 'self'; img-src 'self' data:");
+        put("server-version-exposed", "서버 프로그램 이름·버전이 드러남", "서버 버전 정보 숨기기", SERVER,
+                "응답에 서버 프로그램과 버전(예: Apache/2.4.41, PHP/8.1)이 보이면, 그 버전의 알려진 취약점을 노린 공격의 단서가 됩니다.",
+                "웹 서버·WAS 설정에서 버전 표시를 끄고(Apache ServerTokens Prod, Nginx server_tokens off, PHP expose_php Off), X-Powered-By 헤더를 지워 주세요.",
+                "Server: Apache/2.4.41 (Unix)\n→ Server: Apache");
+        put("cookie-insecure", "쿠키에 보안 설정이 빠짐", "쿠키 Secure · HttpOnly 설정", DEV,
+                "Secure가 없으면 암호화되지 않은 연결로 쿠키가 전송될 수 있고, 로그인 쿠키에 HttpOnly가 없으면 악성 스크립트가 쿠키를 훔쳐 갈 수 있습니다.",
+                "쿠키를 만들 때 Secure와 HttpOnly(로그인·세션 쿠키), SameSite=Lax 이상을 붙여 주세요. WAS 세션 쿠키 설정에서 한 번에 바꿀 수 있습니다.",
+                "Set-Cookie: JSESSIONID=abc; Path=/\n→ Set-Cookie: JSESSIONID=abc; Path=/; Secure; HttpOnly; SameSite=Lax");
+        put("cert-expired", "보안 인증서가 만료됨", "보안 인증서 즉시 갱신", SERVER,
+                "인증서가 만료되어 방문자 브라우저에 '연결이 비공개로 설정되어 있지 않습니다' 같은 경고가 뜨고, 대부분 방문자가 사이트에 들어오지 못합니다.",
+                "인증서를 바로 갱신해 서버에 설치해 주세요. 다시 생기지 않도록 자동 갱신이나 만료 알림을 설정해 주세요.",
+                null);
+        put("cert-expiring", "보안 인증서가 곧 만료됨", "보안 인증서 미리 갱신", SERVER,
+                "30일 안에 인증서가 만료됩니다. 만료되면 방문자에게 보안 경고가 뜨고 사이트에 들어오지 못합니다.",
+                "만료 전에 인증서를 갱신해 서버에 설치해 주세요. 인증서 발급·결재 기간을 생각해 미리 진행하는 것이 좋습니다.",
+                null);
+        put("cert-untrusted", "보안 인증서를 신뢰할 수 없음", "올바른 보안 인증서 설치", SERVER,
+                "인증서가 스스로 서명한 것이거나, 중간 인증서가 빠졌거나, 주소와 맞지 않아 브라우저가 경고를 띄울 수 있습니다.",
+                "공인 인증 기관의 인증서를 쓰고, 중간 인증서(체인)까지 함께 설치했는지, 인증서의 도메인이 사이트 주소와 같은지 확인해 주세요.",
+                null);
+        put("cert-unreadable", "보안 인증서를 확인하지 못함", "보안 인증서 상태 직접 확인", SERVER,
+                "자동으로 인증서 정보를 읽지 못했습니다 (방화벽·접속 제한 등).",
+                "브라우저 주소창의 자물쇠 아이콘을 눌러 인증서 만료일과 발급 기관을 직접 확인해 주세요.",
+                null);
+        put("mobile-viewport-missing", "모바일 화면 설정(viewport)이 없음", "모바일 화면 설정 넣기 (반응형)", PUB,
+                "휴대폰 브라우저가 PC 화면 폭(약 980px)으로 그린 뒤 줄여 보여 주어, 글자가 아주 작고 확대해야만 읽을 수 있습니다.",
+                "반응형으로 만든 사이트라면 <head>에 viewport 설정을 넣어 주세요. 모바일 전용 사이트가 따로 있다면 모바일 주소로 다시 점검해 주세요.",
+                "<head>\n  <title>…</title>\n</head>\n→ <head>\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>…</title>\n</head>");
+        put("mobile-zoom-blocked", "손가락으로 화면을 확대하지 못하게 막아 둠", "화면 확대 허용", PUB,
+                "저시력자·고령자는 글자를 키워 봐야 하는데 확대가 막혀 있어 내용을 읽을 수 없습니다.",
+                "viewport 설정에서 user-scalable=no와 maximum-scale=1을 지워 주세요.",
+                "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no\">\n→ <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+        put("mobile-small-text", "휴대폰에서 글자가 너무 작음", "모바일 글자 크기 키우기", PUB,
+                "12px보다 작은 글자는 휴대폰에서 읽기 어렵습니다.",
+                "모바일 화면(미디어 쿼리)에서 본문 글자를 14px 이상, 작은 안내 글자도 12px 이상으로 맞춰 주세요.",
+                ".notice { font-size: 10px; }\n→ @media (max-width: 768px) { .notice { font-size: 13px; } }");
+
+        // ===================== 공공 웹사이트 필수 요소 =====================
+        put("privacy-policy-missing", "개인정보처리방침 링크가 없음", "개인정보처리방침 링크 넣기", CONTENT,
+                "개인정보를 다루는 기관·사이트는 개인정보처리방침을 누구나 쉽게 볼 수 있게 공개해야 합니다 (개인정보 보호법). 바닥글에 링크가 없으면 방문자가 찾을 수 없습니다.",
+                "모든 페이지 바닥글에 '개인정보처리방침' 링크를 넣어 주세요. 다른 안내 링크보다 눈에 잘 띄게(글자색·굵기) 표시하는 것이 좋습니다.",
+                "<footer>\n  <a href=\"/terms\">이용약관</a>\n</footer>\n→ <footer>\n  <a href=\"/privacy\"><strong>개인정보처리방침</strong></a>\n  <a href=\"/terms\">이용약관</a>\n</footer>");
+        put("terms-missing", "이용약관 링크가 없음", "이용약관 링크 넣기 (필요한 경우)", CONTENT,
+                "회원 가입·로그인·신청처럼 서비스를 제공하는 사이트는 이용 조건을 이용약관으로 알려야 합니다. 안내만 하는 사이트라면 없어도 될 수 있습니다.",
+                "서비스가 있는 사이트라면 바닥글에 '이용약관' 링크를 넣어 주세요. 필요 없는 사이트라면 이 항목은 넘어가도 됩니다.", null);
+        put("copyright-missing", "저작권 표시가 없음", "바닥글에 저작권 표시 넣기", PUB,
+                "사이트의 글·이미지가 누구의 것인지 알리는 표시가 없습니다. 공공기관 사이트는 보통 바닥글에 저작권 표시를 둡니다.",
+                "바닥글에 'Copyright ⓒ 기관명. All rights reserved.' 같은 저작권 표시를 넣어 주세요.",
+                "<footer>…</footer>\n→ <footer>…<p>Copyright ⓒ 기관명. All rights reserved.</p></footer>");
+
         put("is-crawlable", "검색엔진 수집이 막혀 있음", "검색엔진 수집 차단 해제 확인", SERVER,
                 "이 페이지가 네이버·구글 검색 결과에 나오지 않도록 설정되어 있습니다.",
                 "robots.txt의 Disallow, <meta name=\"robots\" content=\"noindex\">, 응답 헤더 X-Robots-Tag 중 무엇이 막고 있는지 확인해 주세요. 의도한 차단이 아니라면 지워 주세요.",

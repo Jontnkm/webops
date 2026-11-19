@@ -32,7 +32,8 @@ public record ScanReport(
      * 검사 범위: maxPages(요청한 최대 페이지 수), pageCount(실제로 검사한 수),
      * linksChecked(확인한 서로 다른 링크 수), scrolled(끝까지 스크롤했는지)
      */
-    public record Scope(Integer maxPages, Integer pageCount, Integer linksChecked, Boolean scrolled) {
+    /** check: 점검 종류(all · function · a11y · perf · seo · security · mobile, 예전 결과는 null = 종합) · mobileUrl: 모바일 전용 주소 */
+    public record Scope(Integer maxPages, Integer pageCount, Integer linksChecked, Boolean scrolled, String check, String mobileUrl) {
     }
 
     public record PageResult(
@@ -48,7 +49,17 @@ public record ScanReport(
             Integer imageCount,
             Scroll scroll,
             Mobile mobile,
+            Essentials essentials,
+            Cert cert,
             Summary summary) {
+    }
+
+    /** 보안 인증서 (보안 점검의 첫 페이지): 만료일 · 남은 날 · 발급 기관 · 신뢰할 수 있는지 */
+    public record Cert(String validTo, Integer daysLeft, String issuer, Boolean trusted) {
+    }
+
+    /** 공공 웹사이트 필수 요소에서 찾은 문구 (못 찾으면 null). 확인하지 않은 페이지·예전 결과는 essentials 자체가 null */
+    public record Essentials(String privacy, String terms, String copyright) {
     }
 
     /** 끝까지 스크롤한 결과: 내린 횟수, 페이지 높이(px), 끝에 닿았는지, 스크롤하며 추가로 불러온 파일 수 */
@@ -83,7 +94,18 @@ public record ScanReport(
             boolean manualCheck,
             String screenshot,
             String fingerprint,
-            List<String> pages) {
+            List<String> pages,
+            Integer occurrences) {
+
+        /** 같은 자리에서 실제로 발견된 횟수 (예: 목록 27줄의 같은 칸 → 27). 예전 결과는 null → 1 */
+        public int occurrenceCount() {
+            return occurrences == null || occurrences < 1 ? 1 : occurrences;
+        }
+
+        /** 같은 자리에서 여러 번 되풀이된 문제인지 (1건으로 셈) */
+        public boolean repeated() {
+            return occurrenceCount() > 1;
+        }
 
         /** 이 문제가 있는 페이지들. 여러 페이지에 똑같이 있는 공통 영역 문제는 1건에 페이지가 여러 개 (예전 결과는 pageUrl 하나) */
         public List<String> pageList() {

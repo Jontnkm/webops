@@ -20,6 +20,9 @@ public interface ScanJobRepository extends JpaRepository<ScanJobEntity, String> 
     /** 첫 화면 최근 검사 카드 (페이지 나눔, 전체 건수 포함) */
     Page<ScanJobEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
+    /** 최근 검사 검색: 주소에 검색어가 들어간 기록 (대소문자 무시) */
+    Page<ScanJobEntity> findByUrlContainingIgnoreCaseOrderByCreatedAtDesc(String url, Pageable pageable);
+
     /** 재검사 비교 기준: 같은 주소 · 같은 검사 범위로 이 검사보다 먼저 끝난 검사 중 가장 최근 */
     Optional<ScanJobEntity> findFirstByUrlAndMaxPagesAndStatusAndCreatedAtBeforeOrderByCreatedAtDesc(
             String url, int maxPages, String status, LocalDateTime before);
@@ -40,4 +43,8 @@ public interface ScanJobRepository extends JpaRepository<ScanJobEntity, String> 
     @Modifying
     @Query("delete from ScanJobEntity j where j.jobId = :jobId")
     int deleteJob(String jobId);
+
+    /** 재검사 비교 후보: 같은 주소 · 같은 범위의 끝난 검사 (최근 순 50개, 점검 종류는 ScanStore에서 거름) */
+    java.util.List<ScanJobEntity> findTop50ByUrlAndMaxPagesAndStatusAndCreatedAtBeforeOrderByCreatedAtDesc(
+            String url, int maxPages, String status, java.time.LocalDateTime before);
 }

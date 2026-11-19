@@ -24,6 +24,19 @@ export function startServer(port = 4173) {
         res.end(req.method === 'HEAD' ? undefined : '<!doctype html><title>ok</title><p>GET이면 정상');
         return;
       }
+      // 보안 점검: 보안 헤더는 갖췄지만 서버 버전이 드러나고, 로그인 쿠키에 HttpOnly가 없는 페이지
+      if (urlPath === '/secure.html') {
+        res.writeHead(200, {
+          'content-type': 'text/html; charset=utf-8',
+          'x-frame-options': 'SAMEORIGIN',
+          'x-content-type-options': 'nosniff',
+          'content-security-policy': "default-src 'self'",
+          'x-powered-by': 'PHP/8.1.2',
+          'set-cookie': ['JSESSIONID=abc123; Path=/', 'lang=ko; Path=/; HttpOnly'],
+        });
+        res.end('<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>보안 테스트</title></head><body><h1>보안 헤더 테스트</h1></body></html>');
+        return;
+      }
       // 서버 오류(500)를 돌려주는 데이터 요청
       if (urlPath === '/api/notice-list.do') {
         res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });

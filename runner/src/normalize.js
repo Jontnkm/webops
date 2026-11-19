@@ -13,6 +13,16 @@ const SEO_SEVERITY = { 'is-crawlable': 'HIGH', 'http-status-code': 'HIGH', 'robo
 // 접속은 되지만 자동 접속을 막는 경우가 많은 상태 → 깨진 링크로 단정하지 않고 "직접 확인 필요"로 둔다.
 const RESTRICTED_STATUS = new Set([401, 403, 429]);
 
+// 점검 종류별로 결과에 남길 분류 (접속 문제는 어느 점검이든 남긴다)
+const CATEGORIES_BY_CHECK = {
+  function: ['AVAILABILITY', 'LINK', 'IMAGE', 'RESOURCE', 'API', 'SCRIPT'],
+  a11y: ['AVAILABILITY', 'ACCESSIBILITY'],
+  perf: ['AVAILABILITY', 'PERFORMANCE'],
+  seo: ['AVAILABILITY', 'SEO'],
+  security: ['AVAILABILITY', 'SECURITY'],
+  mobile: ['AVAILABILITY', 'MOBILE'],
+};
+
 export function makeJobId(date = new Date()) {
   const p = (n) => String(n).padStart(2, '0');
   const stamp = `${date.getFullYear()}${p(date.getMonth() + 1)}${p(date.getDate())}-${p(date.getHours())}${p(date.getMinutes())}${p(date.getSeconds())}`;
@@ -28,14 +38,20 @@ export function buildReport({ jobId, startedAt, finishedAt, raw, toolVersion, br
   const all = [];
   const warnings = [...raw.warnings];
   const multi = raw.pages.length > 1;
+  const allowed = CATEGORIES_BY_CHECK[raw.scope?.check] ?? null;
   const pages = raw.pages.map((rp) => {
-    const own = pageFindings(jobId, rp, warnings, multi);
+    const own = pageFindings(jobId, rp, warnings, multi)
+      .filter((f) => !allowed || allowed.includes(f.category) || f.category.startsWith('ESS_'));
     all.push(...own);
-    // 페이지별 요약(점수표용)은 합치기 전 기준: 공통 영역 문제도 그 페이지에 실제로 있으므로 각 페이지에 반영
-    return pageEntry(rp, own);
+    // 페이지별 요약(점수표용): 페이지 안에서 같은 자리 반복은 1건, 공통 영역 문제는 각 페이지에 반영
+    return pageEntry(rp, mergeShared(own));
   });
-  // 머리글·바닥글·퀵메뉴처럼 여러 페이지에 똑같이 있는 문제는 1건으로 합친다 (고칠 곳은 한 곳)
+  // 같은 자리에서 되풀이되는 문제(목록의 같은 칸, 머리글·바닥글·퀵메뉴 등)는 1건으로 합친다 (고칠 곳은 한 곳)
   const findings = mergeShared(all);
+  for (const f of findings) {
+    delete f.group;
+    delete f.place;
+  }
   // 도구 정보는 Lighthouse를 돌린 첫 페이지 기준
   const first = raw.pages[0] ?? {};
 
@@ -66,14 +82,16 @@ export function buildReport({ jobId, startedAt, finishedAt, raw, toolVersion, br
 }
 
 /**
- * 여러 페이지에서 나온 '같은 문제'를 1건으로 합친다. 합친 항목의 pages에 문제가 있는 페이지 주소를 모두 담는다.
+ * '같은 자리의 같은 문제'를 1건으로 합친다. 같은 페이지 안에서 되풀이돼도, 여러 페이지에 걸쳐 있어도 1건.
+ * 합친 항목: pages = 문제가 있는 페이지 주소 모두, occurrences = 실제로 발견된 횟수.
  * 같은 문제의 기준 (sharedKey):
  *   - 링크 · 이미지 · 파일 · 데이터 요청 · 보안 연결: 같은 규칙 + 같은 주소(target)
  *   - 화면 동작(스크립트 오류): 같은 규칙 + 같은 메시지
- *   - 접근성 · 휴대폰 화면: 같은 규칙 + 같은 위치(selector) + 같은 코드
+ *   - 접근성 · 휴대폰 화면: 같은 규칙 + 같은 자리 (+ 글자색 대비는 같은 색 조합)
+ *     자리 = 검사할 때 브라우저에서 구한 구조(checks/a11y.js addPlaces), 없으면 placeOf(selector)
+ *     예) 검색 결과 27곳의 같은 강조 글자, 목록 42줄의 같은 부제 → 1건. 메뉴와 본문처럼 자리가 다르면 따로.
  *   - 접속 · 로딩 속도 · 검색 노출은 페이지마다 다른 문제이므로 합치지 않는다
- * 같은 페이지 안의 항목끼리는 합치지 않는다.
- * 합친 항목의 fingerprint는 페이지 주소를 빼고 만들어, 다음 검사에서 공통 영역 문제를 같은 문제로 알아본다.
+ * 합친 항목의 fingerprint는 '자리' 기준으로 만들어, 다음 검사에서 같은 문제로 알아본다.
  */
 export function mergeShared(findings) {
   const byKey = new Map();
@@ -81,17 +99,21 @@ export function mergeShared(findings) {
   for (const f of findings) {
     const key = sharedKey(f);
     const hit = key ? byKey.get(key) : null;
-    if (hit && !hit.pages.includes(f.pageUrl)) {
-      hit.pages.push(f.pageUrl);
+    if (hit) {
+      hit.occurrences += f.occurrences ?? 1;
+      for (const u of f.pages ?? [f.pageUrl]) if (!hit.pages.includes(u)) hit.pages.push(u);
       if (!hit.screenshot && f.screenshot) hit.screenshot = f.screenshot;
       continue;
     }
-    const copy = { ...f, pages: [f.pageUrl] };
-    if (key && !hit) byKey.set(key, copy);
+    const copy = { ...f, pages: [...(f.pages ?? [f.pageUrl])], occurrences: f.occurrences ?? 1 };
+    if (key) byKey.set(key, copy);
     out.push(copy);
   }
   for (const f of out) {
-    if (f.pages.length > 1) f.fingerprint = fingerprint('shared', f.ruleId, sharedKey(f));
+    const key = sharedKey(f);
+    if (!key) continue;
+    if (f.pages.length > 1) f.fingerprint = fingerprint('shared', f.ruleId, key);
+    else if (f.category === 'ACCESSIBILITY' || f.category === 'MOBILE') f.fingerprint = fingerprint(f.pages[0], f.ruleId, key);
   }
   return out;
 }
@@ -104,15 +126,35 @@ function sharedKey(f) {
     case 'RESOURCE':
     case 'API':
     case 'SECURITY':
-      return f.target ? `${base}|t|${f.target}` : null;
+      return f.target ? `${base}|t|${f.target}` : f.category === 'SECURITY' ? base : null;
+    case 'ESS_PRIVACY':
+    case 'ESS_TERMS':
+    case 'ESS_COPYRIGHT':
+      return base; // 필수 요소는 페이지마다 같은 문제 (빠진 페이지를 pages[]에)
     case 'SCRIPT':
       return `${base}|e|${f.evidence ?? ''}|${f.target ?? ''}`;
     case 'ACCESSIBILITY':
     case 'MOBILE':
-      return f.selector ? `${base}|s|${f.selector}|${f.evidence ?? ''}` : null;
+      if (!f.selector) return f.category === 'MOBILE' ? base : null; // 모바일 화면 설정·작은 글자처럼 페이지 전체 문제
+      return `${base}|p|${f.place ?? placeOf(f.selector)}|${f.group ?? ''}`;
     default:
       return null; // AVAILABILITY, PERFORMANCE, SEO
   }
+}
+
+/**
+ * 위치(selector) → '자리'. 목록·반복 영역에서 몇 번째인지와 주소·제목 같은 값만 다른 위치는 같은 자리로 본다.
+ *   .list > li:nth-child(3) > a[href="/notice/8756"] > mark  →  .list > li > a[href] > mark
+ *   #tab2 > span  →  #tab* > span  (숫자가 붙은 id는 같은 모양 반복)
+ */
+export function placeOf(selector) {
+  return String(selector)
+    .replace(/:nth-(?:last-)?(?:child|of-type)\([^)]*\)/g, '')
+    .replace(/:(?:first|last|only)-(?:child|of-type)/g, '')
+    .replace(/\[([\w:-]+)\s*[~|^$*]?=\s*(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\]]*)\]/g, '[$1]')
+    .replace(/#([A-Za-z_-]*)\d[\w-]*/g, '#$1*')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function pageEntry(raw, own) {
@@ -129,6 +171,10 @@ function pageEntry(raw, own) {
     imageCount: raw.page?.imageCount ?? null,
     // 끝까지 스크롤한 결과: 내린 횟수, 페이지 높이, 스크롤하며 추가로 불러온 파일 수
     scroll: raw.page?.scroll ?? null,
+    // 공공 웹사이트 필수 요소: 찾은 문구 (못 찾으면 null), 확인하지 않았으면 essentials 자체가 null
+    essentials: raw.essentials ?? null,
+    // 보안 인증서 (보안 점검의 첫 페이지만): 만료일 · 남은 날 · 발급 기관 · 신뢰 여부
+    cert: raw.securitySite?.cert ?? null,
     mobile: raw.mobile
       ? { pageUrl: raw.mobile.finalUrl, viewportWidth: raw.mobile.viewportWidth, scrollWidth: raw.mobile.scrollWidth }
       : null,
@@ -252,10 +298,14 @@ function pageFindings(jobId, raw, warnings, multi) {
   if (raw.a11y) {
     for (const v of raw.a11y.violations) {
       for (const node of v.nodes) {
+        const contrast = v.id === 'color-contrast' ? contrastOf(node) : null;
         add({
           category: 'ACCESSIBILITY', ruleId: v.id, source: 'axe-core',
           severity: SEVERITY_BY_IMPACT[node.impact ?? v.impact] ?? 'MEDIUM',
-          selector: node.target.join(' '), evidence: node.html, description: v.help, helpUrl: v.helpUrl,
+          selector: node.target.join(' '), evidence: node.html, helpUrl: v.helpUrl,
+          description: contrast ? `${v.help} · ${contrast.text}` : v.help,
+          // 같은 자리(브라우저에서 구한 구조) + 글자색 대비는 색 조합까지 같아야 같은 문제
+          place: node.place, group: contrast?.key,
         });
       }
     }
@@ -265,9 +315,49 @@ function pageFindings(jobId, raw, warnings, multi) {
           category: 'ACCESSIBILITY', ruleId: v.id, source: 'axe-core',
           severity: SEVERITY_BY_IMPACT[node.impact ?? v.impact] ?? 'LOW',
           selector: node.target.join(' '), evidence: node.html,
-          description: `[직접 확인 필요] ${v.help}`, helpUrl: v.helpUrl, manualCheck: true,
+          description: `[직접 확인 필요] ${v.help}`, helpUrl: v.helpUrl, manualCheck: true, place: node.place,
         });
       }
+    }
+  }
+
+  // 모바일 환경: 화면 설정 · 확대 막음 · 작은 글자
+  if (raw.mobile) {
+    const m = raw.mobile;
+    if (!m.viewportMeta) {
+      add({ category: 'MOBILE', ruleId: 'mobile-viewport-missing', source: 'playwright', severity: 'MEDIUM',
+        description: '모바일 화면 설정(viewport)이 없음 · 휴대폰에서 PC 화면이 작게 줄어 보임 (반응형이 아님)' });
+    } else if (m.zoomBlocked) {
+      add({ category: 'MOBILE', ruleId: 'mobile-zoom-blocked', source: 'playwright', severity: 'MEDIUM',
+        description: '손가락으로 화면을 확대하지 못하게 막아 둠 · 글자가 작으면 읽을 수 없음', evidence: `<meta name="viewport" content="${m.viewportMeta}">` });
+    }
+    if (m.smallText?.count >= 5) {
+      add({ category: 'MOBILE', ruleId: 'mobile-small-text', source: 'playwright', severity: 'LOW',
+        description: `휴대폰에서 글자가 너무 작음 (12px 미만 ${m.smallText.count}곳)`,
+        evidence: m.smallText.samples.map((x) => `${x.size}px "${x.text}"`).join('\n') });
+    }
+  }
+
+  // 보안: 페이지마다 (헤더 · 쿠키) + 첫 페이지에 사이트 한 번 (인증서 · http 넘김)
+  for (const s of [...(raw.security ?? []), ...(raw.securitySite?.findings ?? [])]) {
+    add({ category: 'SECURITY', ruleId: s.rule, source: 'webops-runner', severity: s.severity,
+      description: s.message, target: s.target ?? null, evidence: s.evidence ?? null });
+  }
+
+  // 공공 웹사이트 필수 요소 (보통 바닥글에 있음. 여러 페이지에서 빠지면 1건 + pages[])
+  if (raw.essentials) {
+    const e = raw.essentials;
+    if (!e.privacy) {
+      add({ category: 'ESS_PRIVACY', ruleId: 'privacy-policy-missing', source: 'webops-runner', severity: 'HIGH',
+        description: '개인정보처리방침 링크를 찾지 못함' });
+    }
+    if (!e.terms) {
+      add({ category: 'ESS_TERMS', ruleId: 'terms-missing', source: 'webops-runner', severity: 'LOW',
+        description: '이용약관 링크를 찾지 못함 (회원 가입·로그인 등 서비스가 있는 사이트는 필요)' });
+    }
+    if (!e.copyright) {
+      add({ category: 'ESS_COPYRIGHT', ruleId: 'copyright-missing', source: 'webops-runner', severity: 'LOW',
+        description: '저작권 표시(Copyright ⓒ 등)를 찾지 못함' });
     }
   }
 
@@ -330,6 +420,19 @@ function pageFindings(jobId, raw, warnings, multi) {
   return findings;
 }
 
+/** axe 글자색 대비 결과 → 근거 문구 "대비 2.9:1 (기준 4.5:1 이상) · 글자색 #eb6b00 · 배경색 #fef3ee · 글자 16px" */
+function contrastOf(node) {
+  const d = node.any?.find((c) => c.data?.contrastRatio != null)?.data;
+  if (!d) return null;
+  const px = /\((\d+(?:\.\d+)?)px\)/.exec(d.fontSize ?? '')?.[1];
+  const expected = String(d.expectedContrastRatio ?? '4.5:1').replace(/:1$/, '');
+  return {
+    key: `${d.fgColor}|${d.bgColor}`,
+    text: `대비 ${d.contrastRatio}:1 (기준 ${expected}:1 이상) · 글자색 ${d.fgColor} · 배경색 ${d.bgColor}`
+      + (px ? ` · 글자 ${px}px${d.fontWeight === 'bold' ? ' 굵게' : ''}` : ''),
+  };
+}
+
 function toFinding(jobId, pageUrl, f) {
   const selector = f.selector ?? null;
   const target = f.target ?? null;
@@ -351,6 +454,9 @@ function toFinding(jobId, pageUrl, f) {
     screenshot: f.screenshot ?? null,
     // 같은 페이지·규칙·위치면 같은 값 → 다음 검사에서 "같은 문제인지" 비교하는 열쇠
     fingerprint: fingerprint(pageUrl, f.ruleId, selector ?? target ?? f.evidence ?? ''),
+    // 합칠 때만 쓰는 값 (자리, 글자색 대비의 색 조합). 결과 파일에는 남기지 않는다.
+    ...(f.place ? { place: f.place } : {}),
+    ...(f.group ? { group: f.group } : {}),
   };
 }
 

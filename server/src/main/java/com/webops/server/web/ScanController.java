@@ -29,6 +29,7 @@ import com.webops.server.config.WebOpsProperties;
 import com.webops.server.scan.InvalidTargetException;
 import com.webops.server.scan.ScanJob;
 import com.webops.server.scan.ScanScope;
+import com.webops.server.scan.ScanType;
 import com.webops.server.scan.ScanService;
 import com.webops.server.scan.ScanStatus;
 import com.webops.server.scan.UrlGuard;
@@ -45,6 +46,8 @@ import com.webops.server.store.SiteRepository;
  *   GET  /scans/{id}/shots/{name} 문제 위치 캡처 이미지
  *   GET  /scans/{id}/print    인쇄용 보고서 화면 (A4)
  *   GET  /scans/{id}/report.pdf   인쇄용 보고서를 PDF로 내려받기
+ *   GET  /scans/{id}/print-a11y   접근성 보고서 인쇄용 화면
+ *   GET  /scans/{id}/a11y-report.pdf  접근성 보고서(KWCAG 2.2) PDF
  */
 @Controller
 public class ScanController {
@@ -69,22 +72,30 @@ public class ScanController {
         this.maxPages = Math.max(1, properties.scan().maxPages());
     }
 
-    /** 첫 화면 최근 검사 카드: 한 쪽에 12개(한 줄 4개 × 3줄) */
-    private static final int RECENT_PER_PAGE = 12;
+    /** 첫 화면 최근 검사 카드: 한 쪽에 6개 (사용자 요청 11/19) */
+    private static final int RECENT_PER_PAGE = 6;
 
     @GetMapping("/")
-    public String index(@RequestParam(defaultValue = "1") int page, Model model) {
-        addRecent(page, model);
+    public String index(@RequestParam(defaultValue = "1") int page,
+                        @RequestParam(defaultValue = "") String q, Model model) {
+        addRecent(page, q, model);
         model.addAttribute("maxPages", maxPages);
+        model.addAttribute("scanTypes", ScanType.values());
+        model.addAttribute("typeSel", ScanType.ALL);
         return "index";
     }
 
-    /** 최근 검사 카드 + 페이지 번호 (page는 1부터, 범위를 벗어나면 맞춰 줌) */
-    private void addRecent(int page, Model model) {
-        org.springframework.data.domain.Page<ScanJob> result = scanService.recentPage(page - 1, RECENT_PER_PAGE);
+    /** 최근 검사 카드 + 페이지 번호 (page는 1부터, 범위를 벗어나면 맞춰 줌). q: 주소 검색어(비우면 전체) */
+    private void addRecent(int page, String q, Model model) {
+        String query = q == null ? "" : q.strip();
+        if (query.length() > 100) query = query.substring(0, 100);
+        org.springframework.data.domain.Page<ScanJob> result = scanService.recentPage(page - 1, RECENT_PER_PAGE, query);
         if (result.getTotalPages() > 0 && page > result.getTotalPages()) {
-            result = scanService.recentPage(result.getTotalPages() - 1, RECENT_PER_PAGE);
+            result = scanService.recentPage(result.getTotalPages() - 1, RECENT_PER_PAGE, query);
         }
+        model.addAttribute("recentQuery", query);
+        // 검색 결과가 없어도 기록 자체가 있으면 최근 검사 영역은 보여 준다
+        model.addAttribute("recentAll", query.isEmpty() ? result.getTotalElements() : scanService.recentCount());
         int current = result.getNumber() + 1;
         int total = Math.max(1, result.getTotalPages());
         // 페이지 번호는 최대 5개: 지금 쪽을 가운데에
@@ -102,16 +113,27 @@ public class ScanController {
      * 검사 시작. scope: MAIN(메인 페이지만) / PAGE(입력한 현재 페이지) / SITE(웹사이트 전체 점검)
      * 메인 페이지만이면 넣은 주소의 경로를 버리고 사이트 첫 화면을 검사한다.
      * posts(상세 옵션, 웹사이트 전체 점검에만): LATEST = 게시판 글처럼 모양이 같은 페이지는 최신 1개만(기본), ALL = 모두
+     * audit(상세 옵션): GENERAL = 일반 검사(기본), PUBLIC = 공공기관 검사(필수 요소 점검 포함)
      */
     public String start(@RequestParam(defaultValue = "") String url,
                         @RequestParam(defaultValue = "false") boolean lighthouse,
-                        @RequestParam(defaultValue = "MAIN") String scope,
+                        @RequestParam(defaultValue = "SITE") String scope,
                         @RequestParam(defaultValue = "LATEST") String posts,
+                        @RequestParam(defaultValue = "GENERAL") String audit,
+                        @RequestParam(defaultValue = "ALL") String type,
+                        @RequestParam(defaultValue = "") String mobileUrl,
                         Model model) {
-        ScanScope range = ScanScope.from(scope);
+        boolean publicCheck = "PUBLIC".equalsIgnoreCase(audit);
+        ScanType checkType = ScanType.from(type);
+        // 종합점검만 검사 범위를 고른다. 나머지 점검은 늘 웹사이트 전체 페이지
+        ScanScope range = checkType == ScanType.ALL ? ScanScope.from(scope) : ScanScope.SITE;
+        // 속도·SEO 측정: 종합점검은 첫 페이지(체크 상자를 숨겨 둔 동안 기본으로 측정), 로딩속도·SEO 점검은 모든 페이지
+        boolean measureSpeed = checkType == ScanType.ALL || checkType.isLighthouseAll();
         try {
             String target = range.targetUrl(urlGuard.check(url));
-            ScanJob job = scanService.start(target, lighthouse, range.maxPages(maxPages), "ALL".equalsIgnoreCase(posts));
+            String mobile = checkType == ScanType.MOBILE && !mobileUrl.isBlank() ? urlGuard.check(mobileUrl) : null;
+            ScanJob job = scanService.start(target, measureSpeed, range.maxPages(maxPages), "ALL".equalsIgnoreCase(posts), publicCheck,
+                    checkType, mobile, null, ScanJob.MANUAL);
             return "redirect:/scans/" + job.getId();
         } catch (InvalidTargetException e) {
             model.addAttribute("error", e.getMessage());
@@ -119,8 +141,13 @@ public class ScanController {
             model.addAttribute("lighthouse", lighthouse);
             model.addAttribute("scope", range.name());
             model.addAttribute("posts", "ALL".equalsIgnoreCase(posts) ? "ALL" : "LATEST");
+            model.addAttribute("audit", publicCheck ? "PUBLIC" : "GENERAL");
+            model.addAttribute("type", checkType.name());
+            model.addAttribute("mobileUrl", mobileUrl);
+            model.addAttribute("scanTypes", ScanType.values());
+            model.addAttribute("typeSel", checkType);
             model.addAttribute("maxPages", maxPages);
-            addRecent(1, model);
+            addRecent(1, "", model);
             return "index";
         }
     }
@@ -139,6 +166,7 @@ public class ScanController {
     /** 최근 검사 카드의 '삭제'. 지운 뒤 보던 쪽으로 돌아간다. */
     @PostMapping("/scans/{id:" + JOB_ID_PATTERN + "}/delete")
     public String delete(@PathVariable String id, @RequestParam(defaultValue = "1") int page,
+                         @RequestParam(defaultValue = "") String q,
                          org.springframework.web.servlet.mvc.support.RedirectAttributes redirect) {
         try {
             scanService.delete(id);
@@ -146,7 +174,9 @@ public class ScanController {
         } catch (ScanStore.CannotDeleteException e) {
             redirect.addFlashAttribute("recentError", e.getMessage());
         }
-        return "redirect:/?page=" + Math.max(1, page) + "#recent";
+        redirect.addAttribute("page", Math.max(1, page));
+        if (!q.isBlank()) redirect.addAttribute("q", q.strip());
+        return "redirect:/#recent";
     }
 
     /** 인쇄용 보고서 화면. 브라우저에서 바로 인쇄하거나, PDF 내려받기가 이 화면을 PDF로 만든다. */
@@ -155,6 +185,7 @@ public class ScanController {
         ScanJob job = findDoneJob(id);
         model.addAttribute("job", job);
         addView(job, model);
+        model.addAttribute("chart", ReportCharts.of((ResultView) model.getAttribute("view")));
         return "report";
     }
 
@@ -201,16 +232,34 @@ public class ScanController {
 
     @GetMapping("/scans/{id:" + JOB_ID_PATTERN + "}/report.pdf")
     public ResponseEntity<FileSystemResource> pdf(@PathVariable String id) {
+        return pdfOf(findDoneJob(id), "print", "report", "webops-report-");
+    }
+
+    /** 접근성 보고서 인쇄용 화면 (KWCAG 2.2 검사항목별 결과 · 직접 확인 체크리스트 · 접근성 문제 상세) */
+    @GetMapping("/scans/{id:" + JOB_ID_PATTERN + "}/print-a11y")
+    public String printA11y(@PathVariable String id, Model model) {
         ScanJob job = findDoneJob(id);
+        model.addAttribute("job", job);
+        addView(job, model);
+        return "report-a11y";
+    }
+
+    @GetMapping("/scans/{id:" + JOB_ID_PATTERN + "}/a11y-report.pdf")
+    public ResponseEntity<FileSystemResource> a11yPdf(@PathVariable String id) {
+        return pdfOf(findDoneJob(id), "print-a11y", "a11y", "webops-accessibility-");
+    }
+
+    /** 인쇄용 화면(page)을 PDF로 만들어 내려준다. 파일은 kind-작업ID.pdf로 한 번 만들면 다시 쓴다 */
+    private ResponseEntity<FileSystemResource> pdfOf(ScanJob job, String page, String kind, String filePrefix) {
         // 항상 이 서버 자신(127.0.0.1)의 인쇄용 화면을 연다 (요청 헤더의 주소는 쓰지 않음)
         String port = environment.getProperty("local.server.port", environment.getProperty("server.port", "8080"));
-        String printUrl = "http://127.0.0.1:" + port + "/scans/" + job.getId() + "/print";
+        String printUrl = "http://127.0.0.1:" + port + "/scans/" + job.getId() + "/" + page;
         try {
-            Path file = scanService.renderPdf(job, printUrl);
+            Path file = scanService.renderPdf(job, printUrl, kind);
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_PDF)
                     .header(HttpHeaders.CONTENT_DISPOSITION,
-                            ContentDisposition.attachment().filename("webops-report-" + job.getId() + ".pdf").build().toString())
+                            ContentDisposition.attachment().filename(filePrefix + job.getId() + ".pdf").build().toString())
                     .body(new FileSystemResource(file));
         } catch (IOException e) {
             log.warn("PDF 만들기 실패: {}", job.getId(), e);

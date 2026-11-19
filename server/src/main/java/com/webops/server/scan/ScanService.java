@@ -84,16 +84,41 @@ public class ScanService implements DisposableBean {
      * @param allPosts 게시판 글처럼 모양이 같은 페이지를 모두 검사할지 (false = 최신 1개만)
      */
     public ScanJob start(String url, boolean lighthouse, int maxPages, boolean allPosts) {
-        return start(url, lighthouse, maxPages, allPosts, null, ScanJob.MANUAL);
+        return start(url, lighthouse, maxPages, allPosts, false, null, ScanJob.MANUAL);
+    }
+
+    /** @param publicCheck 공공기관 검사(필수 요소 점검 포함)인지. false = 일반 검사 */
+    public ScanJob start(String url, boolean lighthouse, int maxPages, boolean allPosts, boolean publicCheck) {
+        return start(url, lighthouse, maxPages, allPosts, publicCheck, null, ScanJob.MANUAL);
+    }
+
+    public ScanJob start(String url, boolean lighthouse, int maxPages, boolean allPosts, Long siteId, String trigger) {
+        return start(url, lighthouse, maxPages, allPosts, false, siteId, trigger);
     }
 
     /** @param siteId 정기 검사 대상에서 나온 검사면 그 번호 (알림·추이 그래프에 쓰임) */
-    public ScanJob start(String url, boolean lighthouse, int maxPages, boolean allPosts, Long siteId, String trigger) {
+    public ScanJob start(String url, boolean lighthouse, int maxPages, boolean allPosts, boolean publicCheck, Long siteId, String trigger) {
+        return start(url, lighthouse, maxPages, allPosts, publicCheck, ScanType.ALL, null, siteId, trigger);
+    }
+
+    /**
+     * @param type      점검 종류 (종합점검 외에는 웹사이트 전체 페이지)
+     * @param mobileUrl 모바일환경 점검의 모바일 전용 주소 (없으면 null)
+     */
+    public ScanJob start(String url, boolean lighthouse, int maxPages, boolean allPosts, boolean publicCheck,
+                         ScanType type, String mobileUrl, Long siteId, String trigger) {
         pruneOldJobs();
         ScanJob job = new ScanJob(newJobId(), url, lighthouse, Math.max(1, maxPages), siteId, trigger);
         job.setAllPosts(allPosts && job.isSiteScan());
         ScanJobEntity entity = new ScanJobEntity(job.getId(), siteId, url, trigger, job.getMaxPages(), lighthouse, job.getCreatedAt());
         entity.setAllPosts(job.isAllPosts());
+        job.setPublicCheck(publicCheck);
+        entity.setPublicCheck(publicCheck);
+        job.setType(type);
+        entity.setCheckType(job.getType().name());
+        String mobile = job.getType() == ScanType.MOBILE ? mobileUrl : null;
+        job.setMobileUrl(mobile);
+        entity.setMobileUrl(mobile);
         store.create(entity);
         jobs.put(job.getId(), job);
         executor.submit(() -> run(job));
@@ -140,6 +165,7 @@ public class ScanService implements DisposableBean {
         // 파일은 DB를 지운 뒤 정리한다 (못 지워도 기록 삭제는 유지). 결과 폴더 안의 정해진 이름만 지운다.
         deleteQuietly(outputDir.resolve("scan-" + id + ".json"));
         deleteQuietly(outputDir.resolve("report-" + id + ".pdf"));
+        deleteQuietly(outputDir.resolve("a11y-" + id + ".pdf"));
         Path shots = outputDir.resolve("shots").resolve(id).normalize();
         if (shots.startsWith(outputDir.resolve("shots")) && Files.isDirectory(shots)) {
             try (var files = Files.list(shots)) {
@@ -161,8 +187,12 @@ public class ScanService implements DisposableBean {
     }
 
     /** 최근 검사 한 쪽 (page는 0부터). 진행 중인 검사는 메모리의 진행 상태로 */
-    public org.springframework.data.domain.Page<ScanJob> recentPage(int page, int size) {
-        return store.recentPage(page, size).map(e -> {
+    public long recentCount() {
+        return store.count();
+    }
+
+    public org.springframework.data.domain.Page<ScanJob> recentPage(int page, int size, String query) {
+        return store.recentPage(page, size, query).map(e -> {
             ScanJob live = jobs.get(e.getJobId());
             return live != null ? live : ScanJob.restore(e, null);
         });
@@ -212,8 +242,21 @@ public class ScanService implements DisposableBean {
             command.add("--posts");
             command.add(job.isAllPosts() ? "all" : "latest");
         }
+        // 점검 종류 (종합점검이 아니면 그 분야만) · 모바일 전용 주소
+        command.add("--check");
+        command.add(job.getType().getCli());
+        if (job.getMobileUrl() != null) {
+            command.add("--mobile-url");
+            command.add(job.getMobileUrl());
+        }
+        // 공공기관 검사: 필수 요소(개인정보처리방침 · 이용약관 · 저작권 표시)도 점검
+        if (job.isPublicCheck()) {
+            command.add("--public");
+        }
         // 페이지가 늘어나는 만큼 제한 시간도 늘린다
-        long timeoutSeconds = runner.timeoutSeconds() + (long) (job.getMaxPages() - 1) * runner.perPageSeconds();
+        // 로딩속도 · SEO 점검은 페이지마다 Lighthouse를 한 번 더 돌리므로 페이지당 시간을 넉넉히 (+60초)
+        long perPage = runner.perPageSeconds() + (job.getType().isLighthouseAll() ? 60 : 0);
+        long timeoutSeconds = runner.timeoutSeconds() + (long) (job.getMaxPages() - 1) * perPage;
 
         Deque<String> lastLines = new ArrayDeque<>();
         try {
@@ -316,12 +359,17 @@ public class ScanService implements DisposableBean {
      * printUrl은 이 서버(127.0.0.1)의 주소만 넘긴다.
      */
     public Path renderPdf(ScanJob job, String printUrl) throws IOException {
-        Path pdf = outputDir.resolve("report-" + job.getId() + ".pdf");
+        return renderPdf(job, printUrl, "report");
+    }
+
+    /** @param kind 파일 이름 앞부분 (report = 전체 보고서, a11y = 접근성 보고서). 한 번 만든 파일은 다시 쓴다 */
+    public Path renderPdf(ScanJob job, String printUrl, String kind) throws IOException {
+        Path pdf = outputDir.resolve(kind + "-" + job.getId() + ".pdf");
         synchronized (job) {
             if (Files.exists(pdf) && Files.size(pdf) > 0) {
                 return pdf;
             }
-            Path temp = outputDir.resolve("report-" + job.getId() + ".tmp.pdf");
+            Path temp = outputDir.resolve(kind + "-" + job.getId() + ".tmp.pdf");
             Process process = new ProcessBuilder(runner.node(), "src/pdf.js", printUrl, temp.toString())
                     .directory(runnerDir.toFile())
                     .redirectErrorStream(true)

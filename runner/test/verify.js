@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { startServer } from '../test-pages/server.js';
 import { scanUrl } from '../src/scanner.js';
 import { saveReport, printSummary } from '../src/output.js';
+import { checkPageSecurity } from '../src/checks/security.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const withLighthouse = !process.argv.includes('--no-lighthouse');
@@ -19,7 +20,7 @@ let failed = 0;
 try {
   const OUT = path.join(ROOT, 'output');
   const steps1 = [];
-  const report = await scanUrl(`${BASE}/broken.html`, { lighthouse: withLighthouse, out: OUT, onStep: (...s) => steps1.push(s) });
+  const report = await scanUrl(`${BASE}/broken.html`, { lighthouse: withLighthouse, essentials: true, out: OUT, onStep: (...s) => steps1.push(s) });
   printSummary(report, { limit: 30 });
   const file = await saveReport(report, OUT, 'verify');
 
@@ -29,12 +30,24 @@ try {
   // 비교용 검사 2: 웹사이트 전체 점검 (탭 3개 동시) → broken·ok·head-404·sub + 게시판 글 7개 중 최신 1개 = 5페이지
   console.log('비교 검사: 웹사이트 전체 점검 (최대 30페이지, 탭 3개)');
   const steps2 = [];
-  const site = await scanUrl(`${BASE}/broken.html`, { lighthouse: false, maxPages: 30, concurrency: 3, out: OUT, onStep: (...s) => steps2.push(s) });
+  const site = await scanUrl(`${BASE}/broken.html`, { lighthouse: false, maxPages: 30, concurrency: 3, essentials: true, out: OUT, onStep: (...s) => steps2.push(s) });
   // 비교용 검사 3: 안전 상한(최대 3페이지)에 걸리면 남은 주소를 알려 주는지
   const capped = await scanUrl(`${BASE}/broken.html`, { lighthouse: false, shots: false, maxPages: 3, concurrency: 2, out: OUT });
   // 비교용 검사 4: 상세 옵션 '모든 게시물' → 게시판 글 7개를 모두 검사
   const allPosts = await scanUrl(`${BASE}/broken.html`, { lighthouse: false, shots: false, maxPages: 30, concurrency: 3, posts: 'all', out: OUT });
   printSummary(site, { limit: 0 });
+  // 점검 종류별 검사 (한 페이지씩, 캡처 없이)
+  console.log('점검 종류별 검사: 기능 · 보안 · 모바일환경');
+  const fnOnly = await scanUrl(`${BASE}/broken.html`, { check: 'function', shots: false, out: OUT });
+  const secPage = await scanUrl(`${BASE}/secure.html`, { check: 'security', shots: false, out: OUT });
+  const mobOld = await scanUrl(`${BASE}/mobile-old.html`, { check: 'mobile', shots: false, out: OUT });
+  const mobZoom = await scanUrl(`${BASE}/zoom.html`, { check: 'mobile', shots: false, out: OUT });
+  // https 페이지 판단은 내 PC에서 재현할 수 없어 함수로 직접 확인
+  const httpsCheck = checkPageSecurity({
+    finalUrl: 'https://example.go.kr/', headers: { 'x-frame-options': 'DENY', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'self'" },
+    setCookies: ['JSESSIONID=1; Path=/; HttpOnly', 'pref=1; Path=/; Secure; SameSite=Lax'],
+  }).map((x) => x.rule);
+  const rules = (rep) => rep.findings.map((x) => x.ruleId);
   const shotExists = (rel) => {
     if (!rel) return false;
     try {
@@ -58,6 +71,38 @@ try {
     ['이름 없는 버튼 (button-name)', a11y('button-name')],
     ['레이블 없는 입력창 (label)', a11y('label')],
     ['명도 대비 부족 (color-contrast)', a11y('color-contrast')],
+    ['[같은 자리] 목록 4줄의 같은 날짜 칸 대비 부족은 1건 (반복 4번)', (() => {
+      const hits = f.filter((x) => x.ruleId === 'color-contrast' && x.evidence?.includes('class="date"'));
+      return hits.length === 1 && hits[0].occurrences === 4;
+    })()],
+    ['[같은 자리] 자리가 다른 대비 부족(본문 문단)은 따로 1건 → 대비 부족 모두 2건', f.filter((x) => x.ruleId === 'color-contrast').length === 2],
+    ['[같은 자리] 한 영역에 나란히 있는 다른 그림 2개(alt 누락)는 따로 셈', f.filter((x) => x.ruleId === 'image-alt' && x.source === 'axe-core').length === 2],
+    ['[근거] 대비 부족에 대비 값·글자색·배경색이 나옴', f.some((x) => x.ruleId === 'color-contrast' && /대비 [\d.]+:1 \(기준 4\.5:1 이상\) · 글자색 #[0-9a-f]{6} · 배경색 #[0-9a-f]{6}/.test(x.description))],
+    ['[같은 자리] 내부 구분 값(place·group)은 결과 파일에 남기지 않음', report.findings.every((x) => !('place' in x) && !('group' in x))],
+    ['[필수 요소] 일반 검사(기본)에서는 필수 요소를 점검하지 않음', noScroll.pages[0].essentials === null && !noScroll.findings.some((x) => x.category?.startsWith('ESS_'))],
+    ['[필수 요소] 바닥글의 개인정보처리방침 링크·저작권 표시를 찾음', report.pages[0].essentials?.privacy === '개인정보처리방침' && /Copyright/.test(report.pages[0].essentials?.copyright ?? '')
+      && !f.some((x) => x.ruleId === 'privacy-policy-missing' || x.ruleId === 'copyright-missing')],
+    ['[필수 요소] 이용약관 링크가 없으면 terms-missing 1건', f.filter((x) => x.ruleId === 'terms-missing' && x.category === 'ESS_TERMS').length === 1],
+    ['[필수 요소] 전체 점검: 저작권 표시 없는 페이지들은 1건으로 묶고 sub.html 포함 · broken.html 제외', (() => {
+      const hits = site.findings.filter((x) => x.ruleId === 'copyright-missing');
+      return hits.length === 1 && hits[0].pages.some((u) => u.endsWith('/sub.html')) && !hits[0].pages.some((u) => u.endsWith('/broken.html'));
+    })()],
+    ['[기능 점검] 기능 분류만 남김 (접근성·보안·휴대폰 없음) + 깨진 링크는 잡음', fnOnly.scope?.check === 'function'
+      && fnOnly.findings.every((x) => ['AVAILABILITY', 'LINK', 'IMAGE', 'RESOURCE', 'API', 'SCRIPT'].includes(x.category))
+      && fnOnly.findings.some((x) => x.ruleId === 'link-broken')],
+    ['[보안] http 페이지는 https-not-used', rules(secPage).includes('https-not-used')],
+    ['[보안] 보안 헤더를 갖춘 페이지는 클릭재킹·nosniff·CSP 지적 없음', !rules(secPage).some((x) => ['clickjacking-unprotected', 'nosniff-missing', 'csp-missing'].includes(x))],
+    ['[보안] 서버 버전 노출(X-Powered-By) · 로그인 쿠키 HttpOnly 없음을 잡음', rules(secPage).includes('server-version-exposed')
+      && secPage.findings.some((x) => x.ruleId === 'cookie-insecure' && x.target === 'JSESSIONID') && !secPage.findings.some((x) => x.target === 'lang')],
+    ['[보안] https 페이지: HSTS 없음 · Secure 없는 쿠키를 잡음 (함수 확인)', httpsCheck.includes('hsts-missing') && httpsCheck.includes('cookie-insecure') && !httpsCheck.includes('https-not-used')],
+    ['[보안] 종합 전체 점검: 여러 페이지의 같은 헤더 문제는 1건 + pages[]', (() => {
+      const hits = site.findings.filter((x) => x.ruleId === 'clickjacking-unprotected');
+      return hits.length === 1 && hits[0].pages.length > 1;
+    })()],
+    ['[모바일] viewport 없는 PC 전용 페이지: 화면 설정 없음 · 작은 글자 + 반응형 아님 안내', rules(mobOld).includes('mobile-viewport-missing')
+      && rules(mobOld).includes('mobile-small-text') && mobOld.warnings.some((w) => w.includes('반응형이 아닌'))],
+    ['[모바일] 확대를 막은 페이지: mobile-zoom-blocked (화면 설정은 있음)', rules(mobZoom).includes('mobile-zoom-blocked') && !rules(mobZoom).includes('mobile-viewport-missing')],
+    ['[모바일] 모바일환경 점검은 휴대폰 브라우저로 열고 모바일 분류만 남김', mobOld.findings.every((x) => ['AVAILABILITY', 'MOBILE'].includes(x.category)) && mobOld.pages[0].mobile?.viewportWidth >= 360],
     ['image-alt를 SEO에서 중복으로 세지 않음', !f.some((x) => x.ruleId === 'image-alt' && x.source === 'lighthouse')],
     ['접근성 설명이 한국어로 나옴', f.some((x) => x.source === 'axe-core' && /[가-힣]/.test(x.description))],
     ['깨진 링크 no-such-page.html (link-broken)', has('link-broken', '/no-such-page.html')],
@@ -114,6 +159,13 @@ try {
       && site.findings.some((x) => x.pageUrl.endsWith('/broken.html'))],
   ];
   if (withLighthouse) {
+    // SEO 점검: 모든 페이지 Lighthouse (SEO만 측정)
+    const seoSite = await scanUrl(`${BASE}/broken.html`, { check: 'seo', maxPages: 3, concurrency: 2, shots: false, out: OUT });
+    checks.push(
+      ['[SEO 점검] 찾은 페이지 모두 SEO 점수 측정 · 로딩 속도는 측정 안 함', seoSite.pages.length === 3
+        && seoSite.pages.every((pg) => pg.scores?.seo != null && pg.scores?.performance == null)
+        && seoSite.findings.every((x) => ['AVAILABILITY', 'SEO'].includes(x.category))],
+    );
     checks.push(
       ['성능·SEO 점수 측정됨', report.pages[0].scores?.performance != null && report.pages[0].scores?.seo != null],
       ['meta description 누락 (SEO)', has('meta-description')],

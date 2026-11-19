@@ -52,8 +52,8 @@ public final class A11yGuideline {
     private static final Item LANG_PART = k("3.1.1", "기본 언어 표시", P3, "3.1.2", "부분 언어", "AA");
     private static final Item FORM_LABEL = k("3.3.2", "레이블 제공", P3, "1.3.1 · 4.1.2", "정보와 관계 · 이름 · 역할 · 값", "A");
     private static final Item MARKUP = k("4.1.1", "마크업 오류 방지", P4, "1.3.1", "정보와 관계", "A");
-    private static final Item ARIA = k("4.1.2", "웹 애플리케이션 접근성 준수", P4, "4.1.2", "이름 · 역할 · 값", "A");
-    private static final Item ARIA_STRUCT = k("4.1.2", "웹 애플리케이션 접근성 준수", P4, "1.3.1", "정보와 관계", "A");
+    private static final Item ARIA = k("4.2.1", "웹 애플리케이션 접근성 준수", P4, "4.1.2", "이름 · 역할 · 값", "A");
+    private static final Item ARIA_STRUCT = k("4.2.1", "웹 애플리케이션 접근성 준수", P4, "1.3.1", "정보와 관계", "A");
 
     /** axe-core 규칙 이름 → 지침 항목 */
     private static final Map<String, Item> BY_RULE = Map.ofEntries(
@@ -128,6 +128,13 @@ public final class A11yGuideline {
             Map.entry("avoid-inline-spacing", k(null, null, null, "1.4.12", "텍스트 간격", "AA")));
 
     private A11yGuideline() {
+    }
+
+    /** 자동 검사 규칙이 하나라도 대응되는 KWCAG 검사항목 번호들 */
+    public static java.util.Set<String> automatedKwcagCodes() {
+        java.util.Set<String> codes = new java.util.TreeSet<>();
+        for (Item it : BY_RULE.values()) if (it.kwcagCode() != null) codes.add(it.kwcagCode());
+        return codes;
     }
 
     /** 접근성 규칙의 지침 항목. 모르는 규칙이면 null */

@@ -48,6 +48,18 @@ public class ScanJobEntity {
     @Column(name = "all_posts_yn")
     private Boolean allPosts;
 
+    /** 공공기관 검사(필수 요소 점검 포함)인지. false/null = 일반 검사 */
+    @Column(name = "public_check_yn")
+    private Boolean publicCheck;
+
+    /** 점검 종류 (ALL · FUNCTION · A11Y · PERF · SEO · SECURITY · MOBILE). null = 예전 검사(종합점검) */
+    @Column(name = "check_type", length = 20)
+    private String checkType;
+
+    /** 모바일환경 점검의 모바일 전용 주소 */
+    @Column(name = "mobile_url", length = 2000)
+    private String mobileUrl;
+
     @Column(name = "error_msg", length = 2000)
     private String error;
 
@@ -120,6 +132,12 @@ public class ScanJobEntity {
     public boolean isLighthouse() { return lighthouse; }
     public boolean isAllPosts() { return Boolean.TRUE.equals(allPosts); }
     public void setAllPosts(boolean allPosts) { this.allPosts = allPosts; }
+    public boolean isPublicCheck() { return Boolean.TRUE.equals(publicCheck); }
+    public void setPublicCheck(boolean publicCheck) { this.publicCheck = publicCheck; }
+    public String getCheckType() { return checkType; }
+    public void setCheckType(String checkType) { this.checkType = checkType; }
+    public String getMobileUrl() { return mobileUrl; }
+    public void setMobileUrl(String mobileUrl) { this.mobileUrl = mobileUrl; }
     public String getError() { return error; }
     public void setError(String error) { this.error = error; }
     public LocalDateTime getCreatedAt() { return createdAt; }

@@ -16,6 +16,10 @@ const HELP = `사용법: node src/scan.js <URL> [옵션]
   --pages <n>         웹사이트 전체 점검: 같은 사이트 링크를 따라가 최대 n개 페이지 검사 (기본 1, 최대 ${MAX_PAGES_LIMIT})
   --concurrency <n>   여러 페이지를 검사할 때 동시에 여는 탭 수 (기본 1, 최대 5)
   --posts <latest|all> 게시판 글처럼 모양이 같은 페이지: latest = 처음 찾은(최신) 1개만 (기본), all = 모두
+  --check <종류>      점검 종류: all(종합점검, 기본) · function(기능) · a11y(웹접근성) · perf(로딩속도, 모든 페이지 Lighthouse)
+                      · seo(SEO, 모든 페이지 Lighthouse) · security(보안) · mobile(모바일환경)
+  --mobile-url <주소> 모바일환경 점검: 반응형이 아닌 사이트의 모바일 전용 주소 (이 주소부터 휴대폰 브라우저로 점검)
+  --public            공공기관 검사: 필수 요소(개인정보처리방침 · 이용약관 · 저작권 표시)도 점검 (기본은 일반 검사)
   --no-scroll         페이지 끝까지 스크롤하지 않음 (늦게 뜨는 이미지는 검사 안 됨)
   --no-shots          문제 위치 화면 캡처를 하지 않음
   --out <폴더>        결과 저장 폴더 (기본 runner/output, 캡처는 <폴더>/shots/<작업ID>/)
@@ -29,7 +33,7 @@ const HELP = `사용법: node src/scan.js <URL> [옵션]
   node src/scan.js www.example.com --pages 300 --concurrency 3 --no-lighthouse`;
 
 function parseArgs(argv) {
-  const opts = { lighthouse: true, maxLinks: 300, maxPages: 1, concurrency: 1, posts: 'latest', mainOnly: false, scroll: true, shots: true, out: path.join(ROOT, 'output') };
+  const opts = { lighthouse: true, maxLinks: 300, maxPages: 1, concurrency: 1, posts: 'latest', mainOnly: false, essentials: false, check: 'all', mobileUrl: null, scroll: true, shots: true, out: path.join(ROOT, 'output') };
   let url = null;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -40,6 +44,9 @@ function parseArgs(argv) {
     else if (arg === '--concurrency') opts.concurrency = Number(argv[++i]);
     else if (arg === '--main') opts.mainOnly = true;
     else if (arg === '--posts') opts.posts = argv[++i];
+    else if (arg === '--public') opts.essentials = true;
+    else if (arg === '--check') opts.check = argv[++i];
+    else if (arg === '--mobile-url') opts.mobileUrl = argv[++i];
     else if (arg === '--no-scroll') opts.scroll = false;
     else if (arg === '--no-shots') opts.shots = false;
     else if (arg === '--out') opts.out = path.resolve(argv[++i]);
@@ -52,6 +59,8 @@ function parseArgs(argv) {
     throw new Error(`--pages에는 1~${MAX_PAGES_LIMIT} 사이 정수를 넣어 주세요`);
   }
   if (!Number.isInteger(opts.concurrency) || opts.concurrency < 1 || opts.concurrency > 5) throw new Error('--concurrency에는 1~5 사이 정수를 넣어 주세요');
+  if (!['all', 'function', 'a11y', 'perf', 'seo', 'security', 'mobile'].includes(opts.check)) throw new Error('--check에는 all · function · a11y · perf · seo · security · mobile 중 하나를 넣어 주세요');
+  if (opts.mobileUrl && !/^https?:\/\//i.test(opts.mobileUrl)) opts.mobileUrl = `https://${opts.mobileUrl}`;
   if (!['latest', 'all'].includes(opts.posts)) throw new Error('--posts에는 latest 또는 all을 넣어 주세요');
   // 작업 ID는 파일 이름에 들어가므로 영문·숫자·하이픈만 허용
   if (opts.jobId !== undefined && !/^[A-Za-z0-9-]{1,64}$/.test(opts.jobId ?? '')) throw new Error('--job-id는 영문·숫자·하이픈만 쓸 수 있습니다');

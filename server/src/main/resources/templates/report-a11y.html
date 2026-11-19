@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<!-- 접근성 보고서 (A4). KWCAG 2.2 검사항목 33개 기준으로 정리하고, 직접 확인 체크리스트와 접근성 문제 상세를 담는다.
+     1쪽: 요약(검사항목 결과 막대 · 원칙별 막대 · 심각도 · 먼저 고칠 것) → 검사항목표 + 확인 칸 → 문제 상세 → 직접 확인 필요 -->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="'접근성 보고서 ' + ${job.id} + ' | WebOps'">접근성 보고서 | WebOps</title>
+  <link rel="stylesheet" th:href="@{/css/report.css}">
+</head>
+<body th:with="page=${view.page}, target=${page != null ? page.pageUrl : job.url}, a=${view.area('ACCESSIBILITY')}, kv=${view.kwcag}">
+
+<!-- 화면에서만 보이는 도구 막대 (인쇄·PDF에는 나오지 않음) -->
+<div class="toolbar no-print">
+  <a th:href="@{/scans/{id}(id=${job.id})}">← 검사 결과 화면</a>
+  <span class="toolbar-title"><b>접근성 보고서 미리 보기</b>
+    <span>KWCAG 2.2 검사항목 기준으로 정리한 문서입니다.</span></span>
+  <span class="toolbar-actions">
+    <button type="button" onclick="window.print()">인쇄</button>
+    <a class="primary" id="pdf-btn" th:href="@{/scans/{id}/a11y-report.pdf(id=${job.id})}">PDF 받기</a>
+  </span>
+</div>
+
+<main class="sheet a11y-report">
+
+  <div class="page-one">
+  <!-- 표지 띠 -->
+  <header class="hero hero-a11y">
+    <p class="brand">WebOps <span>가칭</span><small class="hero-id" th:text="'검사 번호 ' + ${job.id}">검사 번호 J-…</small></p>
+    <h1>웹 접근성 점검 보고서</h1>
+    <p class="hero-url" th:text="${target}">https://www.example.com</p>
+    <ul class="hero-meta">
+      <li><span>검사 일시</span><b th:text="${#temporals.format(job.createdAt, 'yyyy.MM.dd HH:mm')}">2026.11.19 09:00</b></li>
+      <li><span>검사 범위</span><b th:text="${view.multiPage} ? '웹사이트 전체 점검 · ' + ${#lists.size(view.pages)} + '페이지' : ${job.scope.label}">메인 페이지만</b></li>
+      <li><span>점검 기준</span><b>KWCAG 2.2 · WCAG 2.2</b></li>
+      <li><span>검사 방법</span><b>자동 검사 + 직접 확인</b></li>
+    </ul>
+  </header>
+
+  <p class="empty-ok" th:unless="${kv.measured}">이번 검사에서는 접근성을 측정하지 않았습니다.</p>
+
+  <th:block th:if="${kv.measured}">
+  <!-- 핵심 숫자 -->
+  <section class="kpis kpis-4">
+    <div class="kpi kpi-urgent" th:classappend="${kv.bad > 0} ? 'is-bad'">
+      <span class="kpi-label">문제 있는 검사항목</span>
+      <b><span th:text="${kv.bad}">6</span><small th:text="'/ ' + ${kv.total}">/ 33</small></b>
+      <span class="kpi-sub">자동 검사에서 지침을 지키지 않은 곳이 나옴</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-label">자동 검사 이상 없음</span>
+      <b><span th:text="${kv.ok}">12</span><small>개</small></b>
+      <span class="kpi-sub">내용의 적절성은 직접 확인</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-label">직접 확인할 검사항목</span>
+      <b><span th:text="${kv.toCheck}">15</span><small>개</small></b>
+      <span class="kpi-sub">자동으로 판단할 수 없는 항목</span>
+    </div>
+    <div class="kpi kpi-main">
+      <span class="kpi-label">발견된 접근성 문제</span>
+      <b><span th:text="${a.count}">9</span><small>건</small></b>
+      <span class="kpi-sub">같은 자리 반복은 1건으로 셈</span>
+    </div>
+  </section>
+
+  <!-- 33개 검사항목 결과 막대 -->
+  <section class="panel">
+    <h2 class="panel-title">검사항목 결과 <span class="sub" th:text="'KWCAG 2.2 · 전체 ' + ${kv.total} + '개 항목'">전체 33개</span></h2>
+    <div class="stack" role="img" th:attr="aria-label='문제 ' + ${kv.bad} + '개, 자동 검사 이상 없음 ' + ${kv.ok} + '개, 직접 확인 ' + ${kv.toCheck} + '개'">
+      <span class="seg kt-seg-bad" th:if="${kv.bad > 0}" th:style="'width:' + (${kv.bad} * 100.0 / ${kv.total}) + '%'" th:text="${kv.bad}">6</span>
+      <span class="seg kt-seg-ok" th:if="${kv.ok > 0}" th:style="'width:' + (${kv.ok} * 100.0 / ${kv.total}) + '%'" th:text="${kv.ok}">12</span>
+      <span class="seg kt-seg-check" th:if="${kv.toCheck > 0}" th:style="'width:' + (${kv.toCheck} * 100.0 / ${kv.total}) + '%'" th:text="${kv.toCheck}">15</span>
+    </div>
+    <ul class="legend">
+      <li><i class="dot kt-seg-bad"></i>문제 있음 <b th:text="${kv.bad} + '개'">6개</b></li>
+      <li><i class="dot kt-seg-ok"></i>자동 검사 이상 없음 <b th:text="${kv.ok} + '개'">12개</b></li>
+      <li><i class="dot kt-seg-check"></i>직접 확인 <b th:text="${kv.toCheck} + '개'">15개</b></li>
+    </ul>
+
+    <!-- 원칙별 -->
+    <ul class="principle-bars">
+      <li th:each="pr : ${kv.principles}">
+        <span class="pb-name" th:text="${pr.no} + '. ' + ${pr.name}">1. 인식의 용이성</span>
+        <span class="pb-track">
+          <span class="pb-seg kt-seg-bad" th:if="${pr.badCount > 0}" th:style="${pr.width('bad')}"></span>
+          <span class="pb-seg kt-seg-ok" th:if="${pr.okCount > 0}" th:style="${pr.width('ok')}"></span>
+          <span class="pb-seg kt-seg-check" th:if="${pr.checkCount > 0}" th:style="${pr.width('check')}"></span>
+        </span>
+        <span class="pb-nums" th:text="'문제 ' + ${pr.badCount} + ' · 이상 없음 ' + ${pr.okCount} + ' · 직접 확인 ' + ${pr.checkCount} + ' / ' + ${#lists.size(pr.rows)}">문제 2 · 이상 없음 4 · 직접 확인 3 / 9</span>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 심각도 -->
+  <section class="panel" th:if="${a.count > 0}">
+    <h2 class="panel-title">접근성 문제 심각도 <span class="sub" th:text="'총 ' + ${a.count} + '건'">총 9건</span></h2>
+    <div class="stack">
+      <span class="seg sev-critical" th:if="${a.sevCount('CRITICAL') > 0}" th:style="${a.sevWidth('CRITICAL')}" th:text="${a.sevCount('CRITICAL')}">1</span>
+      <span class="seg sev-high" th:if="${a.sevCount('HIGH') > 0}" th:style="${a.sevWidth('HIGH')}" th:text="${a.sevCount('HIGH')}">5</span>
+      <span class="seg sev-medium" th:if="${a.sevCount('MEDIUM') > 0}" th:style="${a.sevWidth('MEDIUM')}" th:text="${a.sevCount('MEDIUM')}">2</span>
+      <span class="seg sev-low" th:if="${a.sevCount('LOW') > 0}" th:style="${a.sevWidth('LOW')}" th:text="${a.sevCount('LOW')}">1</span>
+    </div>
+    <ul class="legend">
+      <li><i class="dot sev-critical"></i>심각 <b th:text="${a.sevCount('CRITICAL')} + '건'">1건</b></li>
+      <li><i class="dot sev-high"></i>높음 <b th:text="${a.sevCount('HIGH')} + '건'">5건</b></li>
+      <li><i class="dot sev-medium"></i>보통 <b th:text="${a.sevCount('MEDIUM')} + '건'">2건</b></li>
+      <li><i class="dot sev-low"></i>낮음 <b th:text="${a.sevCount('LOW')} + '건'">1건</b></li>
+    </ul>
+  </section>
+
+  <!-- 먼저 고칠 것 -->
+  <section class="panel" th:unless="${#lists.isEmpty(a.plan)}">
+    <h2 class="panel-title">먼저 고칠 접근성 문제 <span class="sub">급한 순서 3가지 · 전체는 문제 상세에서</span></h2>
+    <ol class="top-list top-compact">
+      <li th:each="p, st : ${a.plan}" th:if="${st.index < 3}" th:classappend="${'sev-' + #strings.toLowerCase(p.severity)}">
+        <span class="top-no" th:text="${st.count}">1</span>
+        <div class="top-body">
+          <p class="top-action" th:text="${p.action}">할 일</p>
+          <p class="top-meta">
+            <span class="badge" th:classappend="${'sev-' + #strings.toLowerCase(p.severity)}" th:text="${p.severityLabel}">높음</span>
+            <span th:text="'KWCAG ' + ${view.kwcagCodeOf(p.groupId)}" th:if="${!#strings.isEmpty(view.kwcagCodeOf(p.groupId))}">KWCAG 1.4.3</span>
+          </p>
+        </div>
+        <span class="top-count"><b th:text="${p.count}">3</b>곳</span>
+      </li>
+    </ol>
+  </section>
+  </th:block>
+  </div>
+
+  <!-- KWCAG 2.2 검사항목별 결과 + 직접 확인 체크리스트 -->
+  <section class="block page-break" th:if="${kv.measured}">
+    <h2>검사항목별 결과와 확인 체크리스트 <span class="sub" th:text="'문제 ' + ${kv.bad} + '개 · 자동 검사 이상 없음 ' + ${kv.ok} + '개 · 직접 확인 ' + ${kv.toCheck} + '개'">요약</span></h2>
+    <table class="table kwcag-table">
+      <thead><tr><th scope="col" class="c">번호</th><th scope="col">검사항목</th><th scope="col">결과</th><th scope="col">직접 확인할 것</th><th scope="col" class="c">확인</th></tr></thead>
+      <tbody th:each="pr : ${kv.principles}">
+        <tr class="kt-principle"><th colspan="5" scope="rowgroup" th:text="${pr.no} + '. ' + ${pr.name}">1. 인식의 용이성</th></tr>
+        <tr th:each="r : ${pr.rows}" th:classappend="${'kt-' + r.tone}">
+          <td class="c nowrap" th:text="${r.item.code}">1.1.1</td>
+          <th scope="row" th:text="${r.item.name}">적절한 대체 텍스트 제공</th>
+          <td class="nowrap"><span class="kt-status" th:text="${r.status}">자동 검사 이상 없음</span></td>
+          <td class="kt-check" th:text="${r.item.check}">확인 방법</td>
+          <td class="c"><span class="kt-box" aria-hidden="true"></span></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="note">'확인' 칸은 담당자가 직접 확인한 뒤 표시하는 체크리스트입니다. '자동 검사 이상 없음'도 내용의 적절성(예: 대체 텍스트가 알맞은지)은 사람이 확인해야 합니다.</p>
+  </section>
+
+  <!-- 접근성 문제 상세 -->
+  <section class="block page-break" th:unless="${#lists.isEmpty(a.groups)}">
+    <h2>접근성 문제 상세 <span class="sub" th:text="${#lists.size(a.groups)} + '가지 · 급한 순서'">5가지</span></h2>
+    <article class="issue" th:each="g : ${a.groups}">
+      <h3>
+        <span class="badge" th:classappend="${'sev-' + #strings.toLowerCase(g.severity)}" th:text="${g.severityLabel}">심각</span>
+        <span th:text="${g.title}">이미지에 설명 글이 없음</span>
+      </h3>
+      <p class="issue-meta">
+        <span th:text="${g.categoryLabel}">접근성</span> ·
+        <span th:text="${view.multiPage} ? ${g.count} + '곳 · 페이지 ' + ${g.pageCount} + '개' : ${g.count} + '곳'">3곳</span>
+        <span th:if="${g.occurrenceTotal > g.count}" th:text="'(같은 자리 반복을 합치기 전 ' + ${g.occurrenceTotal} + '번 발견)'">(합치기 전 42번)</span> ·
+        검사 규칙 <code th:text="${g.ruleId}">image-alt</code>
+      </p>
+      <!-- 접근성: 지키지 않은 지침 항목 -->
+      <p class="kwcag-line" th:if="${view.guideline(g) != null}" th:with="gl=${view.guideline(g)}">
+        <b>지키지 않은 접근성 지침</b>
+        <span th:if="${gl.hasKwcag}" th:text="'KWCAG 2.2 · ' + ${gl.kwcagCode} + ' ' + ${gl.kwcagName} + ' (' + ${gl.principle} + ')'">KWCAG 2.2 · 1.1.1 적절한 대체 텍스트 제공</span>
+        <span class="muted" th:text="'WCAG 2.2 · ' + ${gl.wcagCode} + ' ' + ${gl.wcagName} + ' (' + ${gl.level} + '등급)'">WCAG</span>
+      </p>
+      <dl class="guide">
+        <div th:if="${g.why}"><dt>원인</dt><dd th:text="${g.why}">설명</dd></div>
+        <div class="fix"><dt>해결 방법</dt><dd th:text="${g.fix}">고치는 방법</dd></div>
+      </dl>
+      <div class="example" th:if="${g.example}">
+        <p class="example-title">추천 개선 방안</p>
+        <div class="example-cols" th:classappend="${g.exampleBefore == null} ? 'single'">
+          <div class="ex-col bad" th:if="${g.exampleBefore}">
+            <p class="ex-label">고치기 전</p>
+            <pre th:text="${g.exampleBefore}">before</pre>
+          </div>
+          <div class="ex-col good">
+            <p class="ex-label" th:text="${g.exampleBefore != null} ? '고친 후' : '예시 코드'">고친 후</p>
+            <pre th:text="${g.exampleAfter}">after</pre>
+          </div>
+        </div>
+      </div>
+      <!-- 발견된 곳: 앞의 3곳만 (캡처가 있으면 그림으로) -->
+      <div class="found">
+        <p class="found-title">발견된 곳 <span class="muted" th:if="${g.count > 3}" th:text="'(앞의 3곳 · 전체 ' + ${g.count} + '곳은 결과 화면에서 확인)'">(앞의 3곳)</span></p>
+        <div class="found-item" th:each="f, st : ${g.items}" th:if="${st.index < 3}">
+          <p class="found-loc">
+            <b th:text="${st.count} + '.'">1.</b>
+            <span th:if="${view.multiPage and !f.shared}" th:text="'페이지 ' + ${view.pathOf(f.pageUrl)}">페이지 /path</span>
+            <span th:if="${f.shared}" class="shared" th:text="'공통 영역 · 페이지 ' + ${#lists.size(f.pageList)} + '개 (1건으로 셈)'">공통 영역</span>
+            <span th:if="${f.repeated}" class="shared" th:text="'같은 자리 ' + ${f.occurrenceCount} + '번 반복 (1건으로 셈)'">같은 자리 반복</span>
+            <span th:if="${f.target}" class="muted" th:text="${f.target}">https://…</span>
+            <code th:if="${f.selector != null and f.screenshotName == null}" th:text="${f.selector}">img</code>
+            <span th:if="${f.selector == null and f.target == null}" class="muted">페이지 전체</span>
+          </p>
+          <figure th:if="${f.screenshotName}">
+            <img th:src="@{/scans/{id}/shots/{n}(id=${job.id},n=${f.screenshotName})}" alt="문제 위치 화면 캡처 (빨간 상자)">
+            <figcaption th:text="(${f.category == 'MOBILE'} ? '휴대폰 화면' : 'PC 화면') + ' · 빨간 상자가 문제 위치'">PC 화면</figcaption>
+          </figure>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- 직접 확인 필요: 자동 검사가 판단을 보류한 곳 -->
+  <section class="block" th:unless="${#lists.isEmpty(view.a11yManualGroups)}">
+    <h2>자동 검사가 판단하지 못한 곳 <span class="sub">화면에서 직접 확인해 주세요</span></h2>
+    <table class="table">
+      <thead><tr><th scope="col">내용</th><th scope="col" class="c">검사항목</th><th scope="col" class="c">곳</th><th scope="col" class="c">확인</th></tr></thead>
+      <tbody>
+        <tr th:each="g : ${view.a11yManualGroups}">
+          <td th:text="${#strings.replace(g.title, '[직접 확인 필요] ', '')}">항목</td>
+          <td class="c nowrap" th:text="${#strings.isEmpty(view.kwcagCode(g))} ? '-' : 'KWCAG ' + ${view.kwcagCode(g)}">KWCAG 1.4.3</td>
+          <td class="c" th:text="${g.count}">3</td>
+          <td class="c"><span class="kt-box" aria-hidden="true"></span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <p class="disclaimer">
+    자동 검사(axe-core) 결과를 한국형 웹 콘텐츠 접근성 지침(KWCAG) 2.2 검사항목에 맞춰 정리한 것으로, 웹 접근성 품질인증 심사의 판정과 다를 수 있습니다.
+    '직접 확인' 항목과 '자동 검사 이상 없음' 항목의 내용 적절성은 담당자가 화면에서 확인해 주세요.
+  </p>
+</main>
+<script>
+  (() => {
+    // ---------- PDF 보고서: 만드는 데 몇 초 걸리므로 진행 중임을 보여 주고, 끝나면 내려받는다 ----------
+    const pdfBtn = document.getElementById('pdf-btn');
+    pdfBtn?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (pdfBtn.getAttribute('aria-busy') === 'true') return;
+      const label = pdfBtn.textContent;
+      pdfBtn.setAttribute('aria-busy', 'true');
+      pdfBtn.textContent = 'PDF 만드는 중…';
+      try {
+        const res = await fetch(pdfBtn.href);
+        if (!res.ok) throw new Error('응답 코드 ' + res.status);
+        const blob = await res.blob();
+        const name = /filename="?([^";]+)"?/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? 'webops-report.pdf';
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      } catch (err) {
+        alert('PDF 보고서를 만들지 못했습니다. 잠시 후 다시 눌러 주세요. (' + err.message + ')');
+      } finally {
+        pdfBtn.textContent = label;
+        pdfBtn.removeAttribute('aria-busy');
+      }
+    });
+  })();
+</script>
+</body>
+</html>

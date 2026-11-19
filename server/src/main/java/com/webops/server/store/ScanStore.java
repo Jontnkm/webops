@@ -147,8 +147,16 @@ public class ScanStore {
 
     /** 최근 검사 한 쪽 (page는 0부터) */
     @Transactional(readOnly = true)
-    public Page<ScanJobEntity> recentPage(int page, int size) {
-        return jobs.findAllByOrderByCreatedAtDesc(PageRequest.of(Math.max(0, page), size));
+    public Page<ScanJobEntity> recentPage(int page, int size, String query) {
+        PageRequest pr = PageRequest.of(Math.max(0, page), size);
+        if (query == null || query.isBlank()) return jobs.findAllByOrderByCreatedAtDesc(pr);
+        return jobs.findByUrlContainingIgnoreCaseOrderByCreatedAtDesc(query.strip(), pr);
+    }
+
+    /** 검사 기록 전체 건수 */
+    @Transactional(readOnly = true)
+    public long count() {
+        return jobs.count();
     }
 
     /** 서버를 다시 켰을 때: 꺼지기 전 진행 중이던 검사는 실패로 정리 */
@@ -166,8 +174,11 @@ public class ScanStore {
     /** 이 검사의 비교 기준이 되는 지난 검사 (같은 주소 · 같은 범위, 끝난 것 중 가장 최근) */
     @Transactional(readOnly = true)
     public Optional<ScanJobEntity> previousOf(ScanJobEntity job) {
-        return jobs.findFirstByUrlAndMaxPagesAndStatusAndCreatedAtBeforeOrderByCreatedAtDesc(
-                job.getUrl(), job.getMaxPages(), DONE, job.getCreatedAt());
+        String type = job.getCheckType() == null ? "ALL" : job.getCheckType();
+        return jobs.findTop50ByUrlAndMaxPagesAndStatusAndCreatedAtBeforeOrderByCreatedAtDesc(
+                        job.getUrl(), job.getMaxPages(), DONE, job.getCreatedAt()).stream()
+                .filter(j -> type.equals(j.getCheckType() == null ? "ALL" : j.getCheckType()))
+                .findFirst();
     }
 
     /** 재검사 비교. 지난 검사가 없으면 비어 있음 */
@@ -223,6 +234,6 @@ public class ScanStore {
     static ScanReport.Finding toFinding(FindingEntity f) {
         return new ScanReport.Finding(f.getPageUrl(), f.getCategory(), f.getRuleId(), f.getSource(), f.getSeverity(),
                 f.getSelector(), f.getTarget(), null, f.getDescription(), null, f.isManualCheck(), f.getScreenshot(),
-                f.getFingerprint(), null);
+                f.getFingerprint(), null, null);
     }
 }

@@ -31,40 +31,71 @@ public record ResultView(
 
     public static final String MANUAL = "MANUAL";
 
-    /** 분류 이름 */
+    /** 분류(세부 항목) 이름: 무슨 문제인지 이름에 드러나게 */
     private static final Map<String, String> CATEGORY_LABELS = Map.ofEntries(
-            Map.entry("AVAILABILITY", "접속"),
-            Map.entry("RESOURCE", "파일 불러오기"),
-            Map.entry("API", "데이터 불러오기"),
-            Map.entry("SCRIPT", "화면 동작"),
-            Map.entry("MOBILE", "휴대폰 화면"),
-            Map.entry("LINK", "링크"),
-            Map.entry("IMAGE", "이미지"),
-            Map.entry("SECURITY", "보안 연결"),
+            Map.entry("AVAILABILITY", "페이지 접속"),
+            Map.entry("LINK", "깨진 링크"),
+            Map.entry("IMAGE", "깨진 이미지"),
+            Map.entry("RESOURCE", "파일 불러오기 오류"),
+            Map.entry("API", "데이터 불러오기 오류"),
+            Map.entry("SCRIPT", "스크립트 오류"),
+            Map.entry("SECURITY", "보안"),
+            Map.entry("MOBILE", "모바일 환경"),
             Map.entry("ACCESSIBILITY", "접근성"),
             Map.entry("PERFORMANCE", "로딩 속도"),
-            Map.entry("SEO", "검색 노출"));
+            Map.entry("SEO", "SEO"),
+            Map.entry("ESS_PRIVACY", "개인정보처리방침"),
+            Map.entry("ESS_TERMS", "이용약관"),
+            Map.entry("ESS_COPYRIGHT", "저작권 표시"));
 
-    /** 분류 순서: 기능이 깨지는 문제 → 이용 편의 → 속도·검색 노출 (같은 심각도일 때 우선순위) */
+    /** 분류 순서: 기능 결함 → 접근성 → 로딩 속도 → SEO (같은 심각도일 때 우선순위) */
     private static final List<String> CATEGORY_ORDER = List.of(
-            "AVAILABILITY", "RESOURCE", "API", "SCRIPT", "MOBILE", "LINK", "IMAGE", "SECURITY",
-            "ACCESSIBILITY", "PERFORMANCE", "SEO");
+            "AVAILABILITY", "LINK", "IMAGE", "RESOURCE", "API", "SCRIPT", "SECURITY", "MOBILE",
+            "ACCESSIBILITY", "PERFORMANCE", "SEO", "ESS_PRIVACY", "ESS_TERMS", "ESS_COPYRIGHT");
+
+    /** 검사 영역 4가지: 코드, 이름, 무엇을 보는지 */
+    private static final List<String[]> AREA_ITEMS = List.of(
+            new String[] {"FUNCTION", "기능 결함", "사이트가 제대로 작동하는지"},
+            new String[] {"ACCESSIBILITY", "접근성", "장애인·고령자도 이용할 수 있는지 (KWCAG 2.2)"},
+            new String[] {"PERFORMANCE", "로딩 속도", "화면이 빨리 뜨는지 (Lighthouse 성능)"},
+            new String[] {"SEO", "SEO", "검색엔진에 잘 나오는지 (Lighthouse SEO)"},
+            new String[] {"SECURITY", "보안", "안전하게 접속되는지 (https · 보안 설정 · 보안 인증서)"},
+            new String[] {"MOBILE", "모바일 환경", "휴대폰에서 잘 보이는지 (가로 360px)"},
+            new String[] {"ESSENTIAL", "필수 요소", "공공 웹사이트에 꼭 있어야 할 안내가 있는지"});
+
+    /** 점검 종류 → 보여 줄 영역 하나 (종합점검은 없음 = 모든 영역) */
+    private static final Map<String, String> AREA_BY_CHECK = Map.of(
+            "function", "FUNCTION", "a11y", "ACCESSIBILITY", "perf", "PERFORMANCE",
+            "seo", "SEO", "security", "SECURITY", "mobile", "MOBILE");
+
+    /** 분류 → 영역. 접근성·로딩 속도·SEO는 분류가 곧 영역, 나머지는 모두 기능 결함 */
+    public static String areaOf(String category) {
+        if (category == null) return "FUNCTION";
+        return switch (category) {
+            case "ACCESSIBILITY", "PERFORMANCE", "SEO", "SECURITY", "MOBILE" -> category;
+            case "ESS_PRIVACY", "ESS_TERMS", "ESS_COPYRIGHT" -> "ESSENTIAL";
+            default -> "FUNCTION";
+        };
+    }
 
     private static final List<String> SEVERITY_ORDER = List.of("CRITICAL", "HIGH", "MEDIUM", "LOW");
 
     /** 검사 항목별 결과표: 코드, 이름, 무엇을 봤는지 */
     private static final List<String[]> CHECK_ITEMS = List.of(
-            new String[] {"AVAILABILITY", "페이지 접속", "페이지가 열리는지"},
-            new String[] {"RESOURCE", "파일 불러오기", "CSS·JS·글꼴 파일을 다 불러오는지"},
-            new String[] {"API", "데이터 불러오기", "목록·팝업 데이터 요청이 성공하는지"},
-            new String[] {"SCRIPT", "화면 동작", "스크립트 오류가 없는지"},
-            new String[] {"MOBILE", "휴대폰 화면", "가로 360px에서 밀리지 않는지"},
-            new String[] {"LINK", "링크", "링크가 제대로 열리는지"},
-            new String[] {"IMAGE", "이미지", "이미지가 엑스박스 없이 보이는지"},
-            new String[] {"SECURITY", "보안 연결", "https 페이지에 http 파일이 없는지"},
-            new String[] {"ACCESSIBILITY", "접근성", "장애인·고령자도 이용할 수 있는지"},
-            new String[] {"PERFORMANCE", "로딩 속도", "빨리 뜨고 화면이 밀리지 않는지"},
-            new String[] {"SEO", "검색 노출", "검색엔진에 잘 나오는지"});
+            new String[] {"AVAILABILITY", "페이지 접속", "페이지가 오류 없이 열리는지"},
+            new String[] {"LINK", "깨진 링크", "누르면 없는 페이지로 가는 링크가 없는지"},
+            new String[] {"IMAGE", "깨진 이미지", "엑스박스로 나오는 그림이 없는지"},
+            new String[] {"RESOURCE", "파일 불러오기 오류", "화면에 필요한 CSS·JS·글꼴 파일을 다 불러오는지"},
+            new String[] {"API", "데이터 불러오기 오류", "목록·팝업 데이터 요청이 성공하는지"},
+            new String[] {"SCRIPT", "스크립트 오류", "메뉴·버튼 동작을 멈추는 스크립트 오류가 없는지"},
+            new String[] {"SECURITY", "보안", "https · 보안 설정 · 보안 인증서가 안전한지"},
+            new String[] {"MOBILE", "모바일 환경", "휴대폰에서 밀림 · 확대 막음 · 작은 글자 없이 잘 보이는지"},
+            new String[] {"ACCESSIBILITY", "접근성", "장애인·고령자도 이용할 수 있는지 (KWCAG 2.2)"},
+            new String[] {"PERFORMANCE", "로딩 속도", "빨리 뜨고 화면이 밀리지 않는지 (Lighthouse 성능)"},
+            new String[] {"SEO", "SEO", "검색엔진에 잘 나오는지 (Lighthouse SEO)"},
+            new String[] {"ESS_PRIVACY", "개인정보처리방침", "개인정보처리방침 링크가 있는지 (개인정보 보호법)"},
+            new String[] {"ESS_TERMS", "이용약관", "이용약관 링크가 있는지 (회원·서비스가 있는 사이트)"},
+            new String[] {"ESS_COPYRIGHT", "저작권 표시", "Copyright ⓒ 같은 저작권 표시가 있는지"});
 
     /**
      * 속도 지표: key, 이름, 쉬운 설명, 좋음 기준, 보통 기준, 단위(ms / score)
@@ -131,7 +162,28 @@ public record ResultView(
     public record FilterOption(String code, String label, long count) {
     }
 
-    /** 유형 선택지: 이 검사에서 나온 분류만 (기능이 깨지는 문제 → 이용 편의 → 속도·검색 노출 순), 직접 확인 필요는 맨 뒤 */
+    /** 유형 선택 상자의 영역 묶음(optgroup): 영역 이름, 영역 전체 선택지(세부 항목이 2개 이상일 때), 세부 항목 선택지 */
+    public record OptionGroup(String label, FilterOption all, List<FilterOption> options) {
+    }
+
+    /** 유형 선택지를 영역별로 묶는다 (이 검사에서 나온 분류만). 직접 확인 필요는 맨 뒤 '기타'. */
+    public List<OptionGroup> typeOptionGroups() {
+        List<FilterOption> flat = typeOptions();
+        List<OptionGroup> out = new ArrayList<>();
+        for (String[] a : AREA_ITEMS) {
+            List<FilterOption> in = flat.stream().filter(o -> !MANUAL.equals(o.code()) && a[0].equals(areaOf(o.code()))).toList();
+            if (in.isEmpty()) continue;
+            FilterOption all = in.size() > 1
+                    ? new FilterOption("AREA:" + a[0], a[1] + " 전체", in.stream().mapToLong(FilterOption::count).sum())
+                    : null;
+            out.add(new OptionGroup(a[1], all, in));
+        }
+        flat.stream().filter(o -> MANUAL.equals(o.code())).findFirst()
+                .ifPresent(m -> out.add(new OptionGroup("기타", null, List.of(m))));
+        return out;
+    }
+
+    /** 유형 선택지: 이 검사에서 나온 분류만 (기능 결함 → 접근성 → 로딩 속도 → SEO 순), 직접 확인 필요는 맨 뒤 */
     public List<FilterOption> typeOptions() {
         List<FilterOption> options = new ArrayList<>();
         for (String code : CATEGORY_ORDER) {
@@ -241,7 +293,8 @@ public record ResultView(
             boolean opened = QualityScore.opened(p);
             Integer score = QualityScore.pageScore(report, p);
             rows.add(new PageRow(index, url, shortPath(url), p.title(), p.httpStatus(), opened, score,
-                    bySeverity, issues, mobileOverflow(p)));
+                    bySeverity, issues, mobileOverflow(p),
+                    p.scores() == null ? null : p.scores().performance(), p.scores() == null ? null : p.scores().seo()));
         }
         return rows;
     }
@@ -325,10 +378,15 @@ public record ResultView(
             boolean measured = switch (code) {
                 case "AVAILABILITY" -> true;
                 case "MOBILE" -> all.stream().anyMatch(p -> p.mobile() != null);
+                case "ESS_PRIVACY", "ESS_TERMS", "ESS_COPYRIGHT" -> all.stream().anyMatch(p -> p.essentials() != null);
                 case "LINK" -> all.stream().anyMatch(p -> p.linksChecked() != null);
                 case "PERFORMANCE", "SEO" -> lighthouse;
                 // https 페이지에서만 의미가 있는 검사
-                case "SECURITY" -> pageLoaded && page.pageUrl() != null && page.pageUrl().startsWith("https://");
+                // 접근성: 접근성을 검사한 점검(종합 · 웹접근성)만, 예전 결과는 페이지가 열렸으면
+                case "ACCESSIBILITY" -> pageLoaded && (checkType(report) == null || List.of("all", "a11y").contains(checkType(report)));
+                case "SECURITY" -> checkType(report) == null
+                        ? pageLoaded && page.pageUrl() != null && page.pageUrl().startsWith("https://")
+                        : pageLoaded && List.of("all", "security").contains(checkType(report));
                 default -> pageLoaded;
             };
             int images = all.stream().mapToInt(p -> p.imageCount() == null ? 0 : p.imageCount()).sum();
@@ -345,10 +403,13 @@ public record ResultView(
                 // 끝까지 스크롤해 늦게 뜨는(lazy) 이미지까지 확인했으면 함께 알려 준다
                 case "IMAGE" -> !pageLoaded ? null : "이미지 " + images + "개 확인" + (scrolled ? " · 끝까지 내려 봄" : "");
                 case "MOBILE" -> multi ? "페이지 " + all.size() + "개 확인" : null;
-                case "PERFORMANCE" -> lighthouse && page.scores().performance() != null ? page.scores().performance() + "점 / 100" : null;
-                case "SEO" -> lighthouse && page.scores().seo() != null ? page.scores().seo() + "점 / 100" : null;
-                case "SECURITY" -> page != null && page.pageUrl() != null && page.pageUrl().startsWith("http://")
-                        ? "https를 쓰지 않는 페이지" : null;
+                // 필수 요소: 찾은 문구를 근거로 보여 준다 (첫 페이지 기준)
+                case "ESS_PRIVACY", "ESS_TERMS", "ESS_COPYRIGHT" -> multi && count > 0
+                        ? "페이지 " + all.size() + "개 중 " + missingPages(findings, code) + "개에서 못 찾음"
+                        : essentialNote(code, page);
+                case "PERFORMANCE" -> lighthouseNote(report, true);
+                case "SEO" -> lighthouseNote(report, false);
+                case "SECURITY" -> certNote(page);
                 default -> null;
             };
             String status = !measured ? ("SECURITY".equals(code) && pageLoaded ? "해당 없음" : "측정 안 함")
@@ -356,6 +417,57 @@ public record ResultView(
             rows.add(new CheckRow(code, item[1], item[2], count, measured, status, note));
         }
         return rows;
+    }
+
+    /** 이 검사의 점검 종류 (예전 결과는 null) */
+    static String checkType(ScanReport report) {
+        return report.scope() == null ? null : report.scope().check();
+    }
+
+    /** Lighthouse 점수 평균 (측정한 페이지가 없으면 null) */
+    static Integer lighthouseAverage(ScanReport report, boolean performance) {
+        if (report.pages() == null) return null;
+        java.util.OptionalDouble avg = report.pages().stream()
+                .map(p -> p.scores() == null ? null : performance ? p.scores().performance() : p.scores().seo())
+                .filter(java.util.Objects::nonNull).mapToInt(Integer::intValue).average();
+        return avg.isPresent() ? (int) Math.round(avg.getAsDouble()) : null;
+    }
+
+    /** "85점 / 100" 또는 여러 페이지면 "평균 85점 (페이지 12개)" */
+    private static String lighthouseNote(ScanReport report, boolean performance) {
+        Integer avg = lighthouseAverage(report, performance);
+        if (avg == null) return null;
+        long n = report.pages().stream()
+                .filter(p -> p.scores() != null && (performance ? p.scores().performance() : p.scores().seo()) != null).count();
+        return n > 1 ? "평균 " + avg + "점 (페이지 " + n + "개)" : avg + "점 / 100";
+    }
+
+    /** 보안 인증서 만료일 안내 */
+    private static String certNote(ScanReport.PageResult page) {
+        if (page == null) return null;
+        if (page.cert() != null && page.cert().validTo() != null) {
+            String until = page.cert().validTo().length() >= 10 ? page.cert().validTo().substring(0, 10) : page.cert().validTo();
+            return "보안 인증서 " + until + "까지" + (page.cert().daysLeft() != null ? " (" + page.cert().daysLeft() + "일 남음)" : "");
+        }
+        return page.pageUrl() != null && page.pageUrl().startsWith("http://") ? "https를 쓰지 않는 사이트" : null;
+    }
+
+    /** 필수 요소를 못 찾은 페이지 수 (여러 페이지 문제는 1건 + pages[]) */
+    private static long missingPages(List<Finding> findings, String code) {
+        return findings.stream().filter(f -> code.equals(f.category()) && !f.manualCheck())
+                .flatMap(f -> f.pageList().stream()).distinct().count();
+    }
+
+    /** 필수 요소에서 찾은 문구 → "찾은 문구: …" (첫 페이지에서 못 찾았으면 null) */
+    private static String essentialNote(String code, ScanReport.PageResult page) {
+        if (page == null || page.essentials() == null) return null;
+        ScanReport.Essentials e = page.essentials();
+        String found = switch (code) {
+            case "ESS_PRIVACY" -> e.privacy();
+            case "ESS_TERMS" -> e.terms();
+            default -> e.copyright();
+        };
+        return found == null ? null : "찾은 문구: “" + found + "”";
     }
 
     /** 지표별 일반적인 개선 방법 */
@@ -399,7 +511,8 @@ public record ResultView(
 
     /** 속도 지표를 그래프로 그릴 수 있게 위치(%)를 계산하고, 개선 방법과 관련 원인을 붙인다. */
     private static List<MetricRow> buildMetrics(ScanReport.PageResult page, List<RuleGroup> groups) {
-        if (page == null || page.metricDetails() == null) return List.of();
+        // SEO 점검처럼 로딩 속도를 재지 않았으면 지표 그래프 없음
+        if (page == null || page.metricDetails() == null || page.scores() == null || page.scores().performance() == null) return List.of();
         List<MetricRow> rows = new ArrayList<>();
         for (Object[] item : METRIC_ITEMS) {
             String key = (String) item[0];
@@ -418,7 +531,7 @@ public record ResultView(
                         key, (String) item[1], (String) item[2],
                         value == null ? (m.displayValue() == null ? "-" : m.displayValue()) : format(value, unit),
                         m.rating() == null ? "NONE" : m.rating(),
-                        RATING_LABELS.getOrDefault(m.rating(), "-"),
+                        m.rating() == null ? "-" : RATING_LABELS.getOrDefault(m.rating(), "-"),
                         value == null ? null : pct(value, max),
                         pct(good, max), pct(poor, max),
                         format(good, unit), format(poor, unit),
@@ -517,7 +630,8 @@ public record ResultView(
      * score: 열리지 않은 페이지는 null, bySeverity: 직접 확인 필요를 뺀 심각도별 건수, issues: 이 페이지에서 나온 문제 종류
      */
     public record PageRow(int index, String url, String path, String title, Integer httpStatus, boolean opened,
-                          Integer score, Map<String, Integer> bySeverity, List<PageIssue> issues, boolean mobileOverflow) {
+                          Integer score, Map<String, Integer> bySeverity, List<PageIssue> issues, boolean mobileOverflow,
+                          Integer perfScore, Integer seoScore) {
 
         /** 점수 구간: 80점 이상 양호, 50~79 주의, 50 미만 위험 */
         public String grade() {
@@ -577,6 +691,207 @@ public record ResultView(
         }
     }
 
+    // ---------- 영역별 결과 (기능 결함 · 접근성 · 로딩 속도 · SEO) ----------
+
+    /**
+     * 영역 하나: 번호, 코드, 이름, 무엇을 보는지, 세부 검사 항목, Lighthouse 점수(로딩 속도·SEO), 할 일, 문제 묶음
+     */
+    public record Area(int no, String code, String label, String what, List<CheckRow> checks, Integer score,
+                       List<PlanItem> plan, List<RuleGroup> groups) {
+
+        /** 발견된 문제 수 (직접 확인 필요 제외) */
+        public long count() {
+            return checks.stream().filter(CheckRow::measured).mapToLong(CheckRow::count).sum();
+        }
+
+        public boolean measured() {
+            return checks.stream().anyMatch(CheckRow::measured);
+        }
+
+        /** 이상 없음 / N건 / 측정 안 함 */
+        public String status() {
+            if (!measured()) return "측정 안 함";
+            return count() == 0 ? "이상 없음" : count() + "건";
+        }
+
+        /** 화면 색: bad(문제 있음) / ok(이상 없음) / skip(측정 안 함) */
+        public String tone() {
+            if (!measured()) return "skip";
+            return count() > 0 ? "bad" : "ok";
+        }
+
+        /** 심각도별 곳 수 (보고서 그래프용) */
+        public long sevCount(String severity) {
+            return groups.stream().filter(g -> severity.equals(g.severity())).mapToLong(RuleGroup::count).sum();
+        }
+
+        /** 심각도별 곳 수의 비율(%) — 쌓은 막대 너비 */
+        public String sevWidth(String severity) {
+            long total = groups.stream().mapToLong(RuleGroup::count).sum();
+            return total == 0 ? "width: 0%;" : "width: " + Math.round(sevCount(severity) * 1000.0 / total) / 10.0 + "%;";
+        }
+
+        /** 세부 항목이 영역 하나뿐인지 (접근성·로딩 속도·SEO) */
+        public boolean single() {
+            return checks.size() == 1;
+        }
+
+        /** 걸러 보기 값: 세부 항목이 여럿이면 영역 전체(AREA:코드), 하나면 그 분류 */
+        public String filterCode() {
+            return single() ? checks.get(0).code() : "AREA:" + code;
+        }
+
+        public long okCount() {
+            return checks.stream().filter(c -> c.measured() && c.count() == 0).count();
+        }
+
+        public long badCount() {
+            return checks.stream().filter(c -> c.measured() && c.count() > 0).count();
+        }
+
+        /** 보고서 원형 점수판의 채움 길이 (Lighthouse 점수) */
+        public String ringDash() {
+            return ReportCharts.dash(score);
+        }
+
+        /** Lighthouse 점수 구간 (good / mid / bad / none) */
+        public String scoreGrade() {
+            if (score == null) return "none";
+            return score >= 90 ? "good" : score >= 50 ? "mid" : "bad";
+        }
+    }
+
+    /** 영역 4가지 (번호 순) */
+    public List<Area> areas() {
+        List<Area> out = new ArrayList<>();
+        boolean essentials = report.pages() != null && report.pages().stream().anyMatch(p -> p.essentials() != null);
+        for (String[] a : AREA_ITEMS) {
+            String code = a[0];
+            if ("ESSENTIAL".equals(code) && !essentials) continue; // 일반 검사에서는 필수 요소 영역을 보이지 않음
+            String only = AREA_BY_CHECK.get(checkType(report) == null ? "all" : checkType(report));
+            if (only != null && !only.equals(code)) continue; // 개별 점검은 그 영역만
+            Integer score = "PERFORMANCE".equals(code) ? lighthouseAverage(report, true)
+                    : "SEO".equals(code) ? lighthouseAverage(report, false) : null;
+            out.add(new Area(out.size() + 1, code, a[1], a[2],
+                    checks.stream().filter(c -> code.equals(areaOf(c.code()))).toList(), score,
+                    plan.stream().filter(p -> code.equals(areaOf(p.category()))).toList(),
+                    groups.stream().filter(g -> !g.manual() && code.equals(areaOf(g.category()))).toList()));
+        }
+        return out;
+    }
+
+    // ---------- KWCAG 2.2 검사항목별 결과 (33개) ----------
+
+    /**
+     * 검사항목 한 줄
+     * tone: bad(자동 검사에서 문제) / warn(자동 판단이 어려워 확인 필요한 곳이 나옴) / ok(자동 검사 이상 없음)
+     *       / manual(자동 검사 대상이 아님 → 직접 확인) / skip(접근성을 측정하지 않음)
+     */
+    public record KwcagRow(Kwcag.Item item, boolean automated, long violations, long manual, String tone, String status) {
+
+        /** 화면 걸러 보기 값 (K:번호) */
+        public String filterCode() {
+            return "K:" + item.code();
+        }
+    }
+
+    public record KwcagPrinciple(int no, String name, List<KwcagRow> rows) {
+
+        public long badCount() {
+            return rows.stream().filter(r -> "bad".equals(r.tone())).count();
+        }
+
+        public long okCount() {
+            return rows.stream().filter(r -> "ok".equals(r.tone())).count();
+        }
+
+        /** 직접 확인할 항목 수 (확인 필요 + 직접 확인) */
+        public long checkCount() {
+            return rows.stream().filter(r -> "warn".equals(r.tone()) || "manual".equals(r.tone())).count();
+        }
+
+        /** 원칙 안에서 tone 비율(%) — 쌓은 막대 너비 */
+        public String width(String tone) {
+            long n = switch (tone) {
+                case "bad" -> badCount();
+                case "ok" -> okCount();
+                default -> checkCount();
+            };
+            return rows.isEmpty() ? "width: 0%;" : "width: " + Math.round(n * 1000.0 / rows.size()) / 10.0 + "%;";
+        }
+    }
+
+    /** 원칙 4개 + 합계: 문제 있는 항목 / 자동 검사 이상 없음 / 직접 확인할 항목 */
+    public record KwcagView(boolean measured, List<KwcagPrinciple> principles, long bad, long ok, long toCheck) {
+
+        public int total() {
+            return Kwcag.ITEMS.size();
+        }
+    }
+
+    public KwcagView kwcag() {
+        boolean measured = checks.stream().anyMatch(c -> "ACCESSIBILITY".equals(c.code()) && c.measured());
+        java.util.Set<String> automated = A11yGuideline.automatedKwcagCodes();
+        List<KwcagPrinciple> principles = new ArrayList<>();
+        long bad = 0, ok = 0, toCheck = 0;
+        for (String p : Kwcag.PRINCIPLES) {
+            List<KwcagRow> rows = new ArrayList<>();
+            for (Kwcag.Item it : Kwcag.ITEMS) {
+                if (!p.equals(it.principle())) continue;
+                long v = kwcagCount(it.code(), false);
+                long m = kwcagCount(it.code(), true);
+                boolean auto = automated.contains(it.code());
+                String tone;
+                String status;
+                if (!measured) { tone = "skip"; status = "측정 안 함"; }
+                else if (v > 0) { tone = "bad"; status = "문제 " + v + "건"; bad++; }
+                else if (m > 0) { tone = "warn"; status = "확인 필요 " + m + "곳"; toCheck++; }
+                else if (auto) { tone = "ok"; status = "자동 검사 이상 없음"; ok++; }
+                else { tone = "manual"; status = "직접 확인"; toCheck++; }
+                rows.add(new KwcagRow(it, auto, v, m, tone, status));
+            }
+            principles.add(new KwcagPrinciple(principles.size() + 1, p, rows));
+        }
+        return new KwcagView(measured, principles, bad, ok, toCheck);
+    }
+
+    /** 이 검사항목에 해당하는 접근성 문제 곳 수 (manual: 직접 확인 필요 항목만 / 아니면 확정된 문제만) */
+    private long kwcagCount(String code, boolean manual) {
+        return groups.stream()
+                .filter(g -> g.manual() == manual && "ACCESSIBILITY".equals(g.category()))
+                .filter(g -> {
+                    A11yGuideline.Item gl = A11yGuideline.of(g.ruleId());
+                    return gl != null && code.equals(gl.kwcagCode());
+                })
+                .mapToLong(RuleGroup::count).sum();
+    }
+
+    /** 화면 걸러 보기용: 개선 방안 한 줄(묶음 번호)의 KWCAG 번호 */
+    public String kwcagCodeOf(String groupId) {
+        return groups.stream().filter(g -> g.id().equals(groupId)).findFirst().map(this::kwcagCode).orElse("");
+    }
+
+    /** 화면 걸러 보기용: 접근성 문제의 KWCAG 번호 (아니면 빈 값) */
+    public String kwcagCode(RuleGroup g) {
+        A11yGuideline.Item gl = guideline(g);
+        return gl == null || gl.kwcagCode() == null ? "" : gl.kwcagCode();
+    }
+
+    /** 영역 하나 (없으면 null) */
+    public Area area(String code) {
+        return areas().stream().filter(a -> a.code().equals(code)).findFirst().orElse(null);
+    }
+
+    /** 접근성의 '직접 확인 필요' 묶음 (자동 검사가 판단을 보류한 곳) */
+    public List<RuleGroup> a11yManualGroups() {
+        return groups.stream().filter(g -> g.manual() && "ACCESSIBILITY".equals(g.category())).toList();
+    }
+
+    /** 화면 걸러 보기용: 분류가 속한 영역 코드 */
+    public String areaCode(String category) {
+        return areaOf(category);
+    }
+
     // ---------- 검사 항목별 결과를 구역별로 ----------
 
     public List<CheckRow> checksWithIssues() {
@@ -615,6 +930,11 @@ public record ResultView(
 
         public int count() {
             return items.size();
+        }
+
+        /** 실제로 발견된 횟수 합계 (같은 자리 반복 포함). count()보다 크면 "같은 자리 반복을 1건으로 셈" 안내 */
+        public int occurrenceTotal() {
+            return items.stream().mapToInt(Finding::occurrenceCount).sum();
         }
 
         /** 이 문제가 나온 페이지 수 (사이트 전체 검사에서 "3개 페이지" 표시용) */

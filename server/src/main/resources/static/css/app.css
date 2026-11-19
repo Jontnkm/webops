@@ -94,6 +94,7 @@ main.container { padding-top: 32px; padding-bottom: 64px; }
 /* ---------- 첫 화면 ---------- */
 .hero { margin-bottom: 40px; }
 .lead { color: var(--c-text-2); margin: 0 0 20px; }
+.scan-form .lead { margin: 0 0 16px; padding-bottom: 14px; border-bottom: 1px solid var(--c-border); }
 .form-label { display: block; font-weight: 700; margin-bottom: 8px; }
 .input-row { display: flex; gap: 8px; }
 .input-row input {
@@ -190,18 +191,111 @@ main.container { padding-top: 32px; padding-bottom: 64px; }
 .check-grid .check-head { flex-direction: column; align-items: flex-start; gap: 0; margin-bottom: 4px; }
 .check-grid .check-status { font-size: 14px; }
 
-/* 구역 나누기 */
-.check-zone { padding: 14px; border-radius: 12px; margin-bottom: 10px; }
-.zone-bad { background: #fdf1ef; border: 1px solid #f2c4bf; }
-.zone-ok { background: #eef8f2; border: 1px solid #c3e6d0; }
-.zone-skip { background: #f3f4f6; border: 1px solid var(--c-border); }
-.zone-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; font-size: 15px; }
-.zone-bad .zone-title { color: var(--c-critical); }
-.zone-ok .zone-title { color: #146c3b; }
-.zone-skip .zone-title { color: var(--c-text-2); }
-.zone-count { font-size: 12px; font-weight: 800; padding: 1px 8px; border-radius: 999px; background: #fff; border: 1px solid currentColor; }
-.zone-hint { font-size: 13px; font-weight: 400; color: var(--c-text-2); }
-.zone-skip p { margin: 8px 0 0; }
+/* 영역별 검사 결과: ① 기능 결함 ② 접근성 ③ 로딩 속도 ④ SEO
+   흰 카드 + 왼쪽 상태 띠(빨강 문제 / 초록 이상 없음 / 회색 측정 안 함).
+   머리는 4칸 고정(번호 | 이름 | 점수 | 상태)이라 네 영역의 점수·버튼이 같은 세로줄에 선다.
+   머리와 세부 항목 사이는 구분선. */
+.area {
+  --tone: #b4bcc7;
+  position: relative; margin-bottom: 12px; overflow: hidden;
+  background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+}
+.area::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--tone); }
+.area-bad { --tone: #d6453d; }
+.area-ok { --tone: #2f9e5b; }
+.area-head {
+  display: grid; grid-template-columns: 32px minmax(0, 1fr) 84px 148px; align-items: center; gap: 14px;
+  padding: 14px 16px 14px 20px;
+}
+.area-no {
+  width: 32px; height: 32px; border-radius: 50%; background: #14233c; color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;
+}
+.area-name { min-width: 0; }
+.area-name h3 { margin: 0; font-size: 16px; line-height: 1.35; }
+.area-name p { margin: 2px 0 0; font-size: 13px; color: var(--c-text-2); }
+
+/* 점수 칸: 로딩 속도·SEO만 채워지고, 나머지는 빈칸으로 자리만 잡는다 */
+.area-score { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
+.as-num { display: inline-flex; align-items: baseline; gap: 2px; }
+.area-score b { font-size: 24px; font-weight: 800; line-height: 1.1; }
+.area-score small { font-size: 12px; font-weight: 700; color: var(--c-text-2); }
+.area-score em { font-style: normal; font-size: 11px; color: var(--c-text-2); margin-top: 2px; }
+.area-score.score-good b { color: #146c3b; }
+.area-score.score-mid b { color: #8a5a00; }
+.area-score.score-bad b { color: var(--c-critical); }
+
+/* 상태 칸: 버튼이든 표시든 같은 크기·같은 위치 */
+.area-action {
+  box-sizing: border-box; width: 100%; height: 42px; padding: 0 14px; border-radius: 12px;
+  display: flex; align-items: center; gap: 8px; font: inherit; font-size: 14px; white-space: nowrap;
+  border: 0; color: var(--c-text-2);
+}
+.area-action b { font-weight: 800; }
+/* 이상 없음 · 측정 안 함: 누를 수 없는 상태 표시 (테두리 없는 옅은 바탕) */
+.area-action.is-ok { background: #e7f5ec; color: #146c3b; }
+.area-action.is-skip { background: #eef0f3; color: #5d6875; }
+.aa-icon {
+  width: 22px; height: 22px; border-radius: 50%; flex: none;
+  display: inline-flex; align-items: center; justify-content: center; color: #fff; background: #9aa4b1;
+}
+.is-ok .aa-icon { background: #2f9e5b; box-shadow: 0 0 0 3px rgba(47, 158, 91, .15); }
+
+/* 문제 있음: 누르는 버튼 — 빨간 그라데이션 + 그림자 + 오른쪽 둥근 화살표 */
+button.area-action.is-bad {
+  position: relative; padding: 0 5px 0 14px; cursor: pointer; color: #fff;
+  background: linear-gradient(180deg, #e8574f 0%, #c8352d 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), 0 1px 2px rgba(150, 30, 24, .3), 0 4px 12px -2px rgba(200, 53, 45, .45);
+  transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+.aa-text { display: inline-flex; align-items: baseline; gap: 6px; }
+.aa-label { font-size: 12px; font-weight: 600; opacity: .85; letter-spacing: .02em; }
+button.area-action.is-bad b { font-size: 16px; letter-spacing: -.01em; }
+.aa-arrow {
+  margin-left: auto; width: 30px; height: 30px; border-radius: 9px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, .2); transition: transform .15s ease, background-color .15s ease;
+}
+button.area-action.is-bad:hover {
+  transform: translateY(-1px); filter: brightness(1.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), 0 2px 4px rgba(150, 30, 24, .3), 0 8px 18px -4px rgba(200, 53, 45, .55);
+}
+button.area-action.is-bad:hover .aa-arrow { transform: translateX(2px); background: rgba(255, 255, 255, .28); }
+button.area-action.is-bad:active { transform: translateY(0); box-shadow: inset 0 2px 4px rgba(0, 0, 0, .2); }
+button.area-action:focus-visible { outline: 3px solid #7aa7ec; outline-offset: 2px; }
+/* 지금 오른쪽에서 이 영역만 보는 중: 남색으로 바뀌고 '보는 중' 표시, 화살표 자리에 × (다시 누르면 전체) */
+button.area-action.is-bad[aria-pressed="true"] {
+  background: linear-gradient(180deg, #24395c 0%, #14233c 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15), 0 4px 12px -2px rgba(20, 35, 60, .45);
+}
+button.area-action.is-bad[aria-pressed="true"] .aa-label { font-size: 0; }
+button.area-action.is-bad[aria-pressed="true"] .aa-label::before { content: "보는 중"; font-size: 12px; }
+button.area-action.is-bad[aria-pressed="true"] .aa-arrow svg { display: none; }
+button.area-action.is-bad[aria-pressed="true"] .aa-arrow::before { content: "×"; font-size: 18px; line-height: 1; }
+@media (prefers-reduced-motion: reduce) {
+  button.area-action.is-bad, .aa-arrow { transition: none; }
+  button.area-action.is-bad:hover { transform: none; }
+}
+
+/* 세부 항목: 구분선 아래 옅은 바탕 */
+.area .check-grid { margin: 0; padding: 14px 16px 16px 20px; border-top: 1px solid var(--c-border); background: #fafbfc; }
+.area-note { margin: 0; padding: 10px 16px 12px 66px; border-top: 1px solid var(--c-border); background: #fafbfc; font-size: 13px; color: var(--c-text-2); }
+
+/* 휴대폰: 이름은 한 줄 전체, 점수·상태는 그 아래 줄 (상태 칸 위치는 그대로 오른쪽) */
+@media (max-width: 560px) {
+  .area-head { grid-template-columns: 32px minmax(0, 1fr) 140px; row-gap: 10px; padding: 12px 12px 12px 16px; }
+  .area-name { grid-column: 2 / -1; }
+  .area-score { grid-column: 2; grid-row: 2; align-items: flex-start; }
+  .area-action { grid-column: 3; grid-row: 2; }
+  .area .check-grid { padding: 12px 12px 14px 16px; grid-auto-rows: auto; }
+  .area-note { padding-left: 16px; }
+}
+/* 머리글 맨 오른쪽 'PDF 보고서 다운로드' 버튼 */
+.btn-report { border-color: #14233c; color: #14233c; font-weight: 700; }
+.btn-report { gap: 6px; }
+.btn-report .btn-ico { flex: none; }
+.btn-report[aria-busy="true"] { opacity: .7; cursor: progress; }
 @media (max-width: 1000px) { .check-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 720px) { .check-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 520px) { .check-grid { grid-template-columns: 1fr; } }
@@ -512,6 +606,7 @@ div.check-item { cursor: default; }
 
 /* 왼쪽은 반 폭이므로 카드·요약 칸 수를 줄인다 */
 .pane-left .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pane-left .stats .stat-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pane-left .check-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 /* 오른쪽 목록: 위치 칸이 좁아지지 않게 */
@@ -533,7 +628,6 @@ div.check-item { cursor: default; }
   .header-desc { display: none; }
   .result-line { flex-wrap: wrap; row-gap: 2px; }
   .result-line .target-url { flex-basis: calc(100% - 80px); }
-  .pane-left .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pane-left .check-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pane { padding: 16px; }
   .metric-head { flex-direction: column; gap: 6px; }
@@ -541,9 +635,9 @@ div.check-item { cursor: default; }
 /* 휴대폰: 헤더 버튼을 두 줄로, 카드는 한 줄에 하나 */
 @media (max-width: 560px) {
   .site-header .header-inner { height: auto; flex-wrap: wrap; padding: 10px 16px; row-gap: 8px; }
-  .header-actions { margin-left: 0; width: 100%; }
+  .header-actions { margin-left: 0; width: 100%; flex-wrap: wrap; }
   .header-actions .btn { flex: 1; padding: 0 8px; font-size: 13px; }
-  .header-actions form { flex: 1; display: flex; }
+  .header-actions > .btn, .header-actions form { flex: 1 1 calc(50% - 8px); display: flex; }
   .pane-left .check-grid { grid-template-columns: 1fr; }
   .check-item { min-height: 0; }
   .plan-item { gap: 6px 10px; }
@@ -557,6 +651,7 @@ div.check-item { cursor: default; }
 @media (max-width: 760px) {
   .stats { grid-template-columns: repeat(2, 1fr); }
   .input-row { flex-direction: column; }
+  .input-row input { flex: none; }
   .group > summary { flex-wrap: wrap; }
   .group-rule { display: none; }
   .items .loc { width: auto; }
@@ -648,6 +743,7 @@ div.check-item { cursor: default; }
 .found .item-desc { margin-top: 6px; }
 /* 공통 영역(여러 페이지에 똑같이 있는 문제, 1건으로 셈) */
 .shared-badge { font-size: 12px; font-weight: 700; color: #5b3a9e; background: #f1ecfb; border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
+.repeat-badge { font-size: 12px; font-weight: 700; color: #1d4f91; background: #eaf2fd; border-radius: 4px; padding: 1px 6px; white-space: normal; }
 .shared-pages { margin: 0 0 8px; font-size: 13px; }
 .shared-pages summary { cursor: pointer; color: var(--c-text-2); }
 .shared-pages ul { margin: 4px 0 0; padding-left: 18px; max-height: 160px; overflow: auto; word-break: break-all; color: var(--c-text-2); }
@@ -910,3 +1006,226 @@ button.compare-item .compare-label { text-decoration: underline; text-underline-
   .site-head-actions form { flex: 1; }
   .site-head-actions .btn { width: 100%; }
 }
+
+/* 접근성·로딩 속도·SEO 문제 카드: 심각도 + 곳 수 */
+.check-grid .check-status:has(.sev-badge) { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; }
+.check-grid .check-status .sev-badge { font-size: 11px; padding: 1px 6px; }
+
+/* ---------- 접근성 지침(KWCAG 2.2) 검사항목 33개 ---------- */
+.kwcag-board { margin-bottom: 28px; }
+.kb-summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.kb-chip { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; }
+.kb-chip b { font-size: 18px; font-weight: 800; }
+.kb-chip.kb-bad { background: #fff1f0; color: var(--c-critical); }
+.kb-chip.kb-ok { background: #e7f5ec; color: #146c3b; }
+.kb-chip.kb-tocheck { background: #eef2f8; color: #1d4f91; }
+.kb-principle {
+  margin-bottom: 12px; overflow: hidden;
+  background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+}
+.kb-p-title { display: flex; align-items: center; gap: 10px; margin: 0; padding: 12px 16px; font-size: 15px; border-bottom: 1px solid var(--c-border); }
+.kb-p-no { width: 26px; height: 26px; border-radius: 50%; background: #14233c; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex: none; }
+.kb-p-count { margin-left: auto; font-size: 12px; font-weight: 800; color: var(--c-critical); }
+.kb-list { list-style: none; margin: 0; padding: 0; }
+.kb-list > li + li { border-top: 1px solid #eef0f3; }
+.kb-row {
+  display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  width: 100%; padding: 9px 16px; font: inherit; color: inherit; text-align: left; background: none; border: 0;
+}
+.kb-code { font-family: var(--mono, monospace); font-size: 13px; font-weight: 700; color: var(--c-text-2); }
+.kb-name { font-size: 14px; min-width: 0; }
+.kb-status { font-size: 12px; font-weight: 800; padding: 2px 9px; border-radius: 999px; white-space: nowrap; background: #eef0f3; color: #5d6875; }
+.kb-bad .kb-status { background: #fff1f0; color: var(--c-critical); }
+.kb-ok .kb-status { background: #e7f5ec; color: #146c3b; }
+.kb-warn .kb-status { background: #fff4d6; color: #7a4f00; }
+.kb-manual .kb-status { background: #eef2f8; color: #1d4f91; }
+.kb-bad .kb-name { font-weight: 700; }
+button.kb-row { cursor: pointer; }
+button.kb-row:hover { background: #fff7f6; }
+button.kb-row:hover .kb-name { text-decoration: underline; text-underline-offset: 3px; }
+button.kb-row[aria-pressed="true"] { background: #fff1f0; box-shadow: inset 3px 0 0 var(--c-critical); }
+button.kb-row:focus-visible { outline: 3px solid #7aa7ec; outline-offset: -3px; }
+.kb-check { margin: -4px 0 0; padding: 0 16px 10px 78px; font-size: 12.5px; color: var(--c-text-2); }
+.kb-check::before { content: "확인 방법 · "; font-weight: 700; color: #1d4f91; }
+@media (max-width: 560px) {
+  .kb-row { grid-template-columns: 44px minmax(0, 1fr); row-gap: 4px; padding: 9px 12px; }
+  .kb-status { grid-column: 2; justify-self: start; }
+  .kb-check { padding: 0 12px 10px 66px; }
+}
+
+/* 접근성 지침 구역 제목 줄: 제목 + 접근성 보고서 PDF 버튼 */
+.kb-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 12px; }
+.kb-head h2 { margin: 0; }
+
+/* 좁은 화면: 검사 정보 줄(공공기관 검사 등)이 길면 줄바꿈 */
+@media (max-width: 760px) { .result-meta { white-space: normal; flex: 1 1 100%; min-width: 0; } }
+
+/* 첫 화면: 점검 종류 7가지 — 아이콘 + 이름 타일, 고른 종류의 설명·옵션은 아래 구역(.type-detail) */
+.types { border: 0; padding: 0; margin: 14px 0 0; min-width: 0; }
+.type-options { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.type-tile {
+  /* 아이콘 윗줄을 맞추려고 위에서부터 배치 (이름이 두 줄이어도 아이콘 위치는 같음) */
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px; min-height: 108px; padding: 16px 6px 12px;
+  border: 1px solid var(--c-border); border-radius: 12px; background: #fff; cursor: pointer; text-align: center;
+  transition: border-color .15s, background-color .15s, box-shadow .15s;
+}
+.type-tile:hover { border-color: #9db8e4; background: #f8fbff; }
+/* 점검 종류 아이콘: 모두 40 × 40px */
+.type-ico { display: inline-flex; flex: none; width: 40px; height: 40px; }
+/* 그림마다 viewBox를 조정해 위아래 끝(약 3~21)을 맞췄고, 선 굵기는 화면 기준 2.4px로 같게 */
+.type-ico svg * { vector-effect: non-scaling-stroke; }
+.type-ico svg { width: 40px; height: 40px; fill: none; stroke: #5d6875; stroke-width: 2.4px; stroke-linecap: round; stroke-linejoin: round; }
+.type-name { font-size: 14px; font-weight: 700; line-height: 1.3; word-break: keep-all; }
+.type-tile:has(input:checked) { border-color: var(--c-primary); background: #f1f6fe; box-shadow: inset 0 0 0 1px var(--c-primary); }
+.type-tile:has(input:checked) .type-ico svg { stroke: var(--c-primary); }
+.type-tile:has(input:checked) .type-name { color: var(--c-primary); }
+.type-tile:has(input:focus-visible) { outline: 3px solid #7aa7ec; outline-offset: 2px; }
+.type-detail { margin-top: 10px; padding: 14px 16px; border: 1px solid #c9daf3; border-radius: 12px; background: #f7faff; }
+.type-detail-head { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.type-detail-head strong { font-size: 15px; color: #1d4f91; }
+.type-detail-head span { font-size: 14px; color: var(--c-text-2); }
+.type-detail .scope { margin: 14px 0 0; padding: 0; border: 0; }
+.type-detail .mobile-url { margin-top: 12px; }
+.type-detail .type-note { margin: 8px 0 0; }
+.mobile-url input[type="text"] { width: 100%; height: 44px; padding: 0 12px; border: 1px solid var(--c-border); border-radius: 8px; font: inherit; background: #fff; }
+.scope[hidden], .mobile-url[hidden], .type-note[hidden], .mobile-url-field[hidden], #mobile-url-off[hidden] { display: none; }
+.mobile-url .check { margin: 0; }
+.mobile-url-field { margin-top: 10px; }
+#mobile-url-off { margin: 6px 0 0; }
+@media (max-width: 1000px) { .type-options { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 560px) {
+  .type-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .type-tile { min-height: 100px; padding: 14px 4px 10px; }
+  .type-name { font-size: 13px; }
+}
+/* 페이지별 점수표: Lighthouse 점수 */
+.page-lh { display: block; font-size: 12px; font-weight: 700; color: #1d4f91; }
+
+/* 점검 종류 제목 옆 작은 안내 */
+.legend-note { margin-left: 8px; font-size: 12px; font-weight: 400; color: var(--c-text-2); }
+@media (max-width: 560px) { .legend-note { display: block; margin: 2px 0 0; } }
+
+/* ---------- 첫 화면 좌우 분할: 왼쪽 입력 · 오른쪽 최근 검사 ----------
+   처음: 왼쪽만 가운데 (오른쪽 폭 0). '최근 검사 기록'을 누르면(.is-split) 왼쪽 폭이 줄며 왼쪽으로 밀리고,
+   오른쪽은 폭이 생긴 뒤 서서히 나타남. 좁은 화면(1000px 이하)은 위아래로 쌓는다. */
+main.container.home { max-width: 1480px; display: flex; justify-content: center; align-items: flex-start; }
+.home-left { flex: 0 1 1040px; min-width: 0; transition: flex-basis .5s cubic-bezier(.4, 0, .2, 1); }
+.home-right {
+  flex: 0 0 0; min-width: 0; overflow: hidden; opacity: 0; visibility: hidden;
+  transition: flex-basis .5s cubic-bezier(.4, 0, .2, 1), opacity .35s ease, visibility 0s linear .5s;
+}
+.home.is-split .home-left { flex-basis: 56%; }
+.home.is-split .home-right {
+  flex-basis: 44%; opacity: 1; visibility: visible; padding-left: 24px;
+  /* 폭이 먼저 생기고 나서 서서히 나타남 */
+  transition: flex-basis .5s cubic-bezier(.4, 0, .2, 1), opacity .45s ease .3s, visibility 0s;
+}
+.home.no-anim .home-left, .home.no-anim .home-right { transition: none !important; }
+@media (prefers-reduced-motion: reduce) { .home-left, .home-right { transition: none !important; } }
+
+/* 오른쪽 안: 최근 검사 카드는 폭에 맞게 1~2칸 */
+.home-right .recent { min-width: 300px; }
+.home-right .recent-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+.recent-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.recent-head h2 { margin: 0; }
+.recent-close {
+  width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--c-border); background: #fff;
+  font-size: 20px; line-height: 1; color: var(--c-text-2); cursor: pointer;
+}
+.recent-close:hover { color: var(--c-text); border-color: #9aa4b1; }
+
+/* '최근 검사 기록' 버튼: 입력 상자 오른쪽 위 */
+.home-tools { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.recent-toggle {
+  display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid var(--c-border); background: #fff; font: inherit; font-size: 14px; font-weight: 600; color: var(--c-text); cursor: pointer;
+  transition: border-color .15s, background-color .15s;
+}
+.recent-toggle b { min-width: 22px; padding: 0 6px; border-radius: 999px; background: #eef2f8; color: #1d4f91; font-size: 12px; }
+.recent-toggle:hover { border-color: var(--c-primary); }
+.recent-toggle[aria-expanded="true"] { border-color: var(--c-primary); background: #f1f6fe; color: var(--c-primary); }
+
+@media (max-width: 1000px) {
+  main.container.home { display: block; }
+  .home-right { opacity: 0; visibility: hidden; height: 0; padding: 0; }
+  .home.is-split .home-right { height: auto; padding: 8px 0 0; opacity: 1; visibility: visible; transition: opacity .35s ease; }
+  .home-right .recent { min-width: 0; }
+}
+
+/* 분할했을 때 왼쪽이 좁아지면 점검 종류 타일·검사 범위가 자연스럽게 줄바꿈 */
+.home.is-split .type-options { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+/* (1001~1280px 분할에서도 카드 3개 가로 배치: 아래 높이 맞춤 규칙에서 세로형 카드로) */
+
+/* 최근 검사 기록 검색: 한 덩어리 검색창 (돋보기 · 입력 · 지우기 · 안쪽 검색 버튼) */
+.legend-note[hidden] { display: none !important; }
+.recent-search { margin-bottom: 16px; }
+.rs-field {
+  display: flex; align-items: center; gap: 4px; height: 48px; padding: 0 5px 0 14px;
+  border: 1px solid #d5dbe4; border-radius: 999px; background: #fff;
+  transition: border-color .15s, background-color .15s, box-shadow .15s;
+}
+.rs-field:hover { border-color: #b7c2d1; background: #fff; }
+.rs-field:focus-within { border-color: var(--c-primary); background: #fff; box-shadow: 0 0 0 4px rgba(31, 95, 191, .14); }
+.rs-ico { flex: none; color: #7a8696; transition: color .15s; }
+.rs-field:focus-within .rs-ico { color: var(--c-primary); }
+.rs-field input[type="search"] {
+  flex: 1 1 auto; min-width: 0; height: 100%; padding: 0 6px; border: 0; background: transparent;
+  font: inherit; font-size: 15px; color: var(--c-text); outline: none;
+}
+.rs-field input[type="search"]::placeholder { color: #8b95a3; }
+.rs-field input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+.rs-clear {
+  flex: none; display: grid; place-items: center; width: 24px; height: 24px; margin-right: 4px; border-radius: 50%;
+  background: #dfe4eb; color: #4b5563; transition: background-color .15s, color .15s;
+}
+.rs-clear:hover { background: #c9d1dc; color: var(--c-text); }
+.rs-btn {
+  flex: none; height: 38px; padding: 0 20px; border: 0; border-radius: 999px;
+  background: linear-gradient(180deg, #2b6fd6, var(--c-primary)); color: #fff;
+  font: inherit; font-size: 14px; font-weight: 700; letter-spacing: .02em; cursor: pointer;
+  box-shadow: 0 1px 2px rgba(16, 42, 84, .25); transition: filter .15s, transform .1s;
+}
+.rs-btn:hover { filter: brightness(1.08); }
+.rs-btn:active { transform: translateY(1px); }
+.rs-btn:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; }
+.recent-empty { margin: 4px 0 16px; padding: 24px 16px; border: 1px dashed var(--c-border); border-radius: 10px; text-align: center; color: var(--c-text-2); font-size: 14px; }
+
+/* 좌우 분할일 때 좌우 높이 맞춤 (1001px 이상): 두 영역을 같은 높이로 늘리고, 짧은 쪽이 늘어난 높이를 나눠 가진다
+   왼쪽: 점검 종류 타일·종류 설명 상자(검사 범위 카드)가 커짐 / 오른쪽: 최근 검사 카드가 커짐 */
+@media (min-width: 1001px) {
+  main.container.home.is-split { align-items: stretch; padding-bottom: 40px; }
+  .home.is-split .home-left { display: flex; flex-direction: column; margin-bottom: 0; }
+  .home.is-split .home-right .recent > :last-child { margin-bottom: 0; }
+  .home.is-split .home-left > .scan-form { flex: 1 1 auto; display: flex; flex-direction: column; }
+  .home.is-split .type-detail { flex: 1 1 auto; display: flex; flex-direction: column; padding: 18px 20px; }
+  .home.is-split .type-detail > .scope:not([hidden]) { flex: 1 1 auto; display: flex; flex-direction: column; }
+  .home.is-split .type-detail .scope-options { flex: 1 1 auto; }
+  /* 카드 3개를 가로로, 카드 안은 위에서부터 (동그라미·번호 → 제목 → 설명) */
+  .home.is-split .scope-option { flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 8px; padding: 14px; }
+  .home.is-split .home-right { display: flex; flex-direction: column; }
+  .home.is-split .home-right > .recent { flex: 1 1 auto; display: flex; flex-direction: column; }
+  .home.is-split .home-right .recent-grid { flex: 1 1 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* 넓은 화면(1281px 이상): 늘어난 높이를 간격 · 점검 종류 타일 · 검사 범위 카드(세로 배치)에 고르게 나눔 */
+@media (min-width: 1281px) {
+  .home.is-split .scan-form .lead { margin-bottom: 22px; padding-bottom: 20px; }
+  .home.is-split .scan-form #url-help { margin-bottom: 24px; }
+  .home.is-split .types .type-options { margin-top: 6px; }
+  .home.is-split .type-tile { min-height: 136px; gap: 12px; padding-top: 26px; }
+  .home.is-split .type-detail { margin-top: 16px; }
+  .home.is-split .type-detail .scope { margin-top: 18px; }
+  .home.is-split .scope-option { flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 10px; padding: 20px 18px; }
+  .home.is-split .scope-option strong { font-size: 16px; }
+}
+
+/* 종합점검 외 점검 종류의 '점검 항목' 카드: 검사 범위 카드와 같은 모양, 누르는 것이 아니라 번호 표시 */
+.check-items > .form-label { margin: 0 0 8px; }
+.check-item { cursor: default; }
+.ci-num {
+  flex: none; display: grid; place-items: center; width: 22px; height: 22px; margin-top: 1px; border-radius: 50%;
+  background: #e5eefb; color: #1d4f91; font-size: 12px; font-weight: 700;
+}
+.type-detail .mobile-url { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #c9daf3; }
+
+/* 카드 제목·설명은 단어 단위로 줄바꿈 */
+.scope-option strong, .scope-desc { word-break: keep-all; overflow-wrap: anywhere; }

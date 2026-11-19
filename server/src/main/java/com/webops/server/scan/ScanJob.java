@@ -37,6 +37,12 @@ public class ScanJob {
     private volatile Integer qualityScore;
     /** 게시판 글처럼 모양이 같은 페이지를 모두 검사할지 (false = 최신 1개만, 웹사이트 전체 점검에만 해당) */
     private volatile boolean allPosts;
+    /** 공공기관 검사: 필수 요소(개인정보처리방침 · 이용약관 · 저작권 표시)도 점검 (false = 일반 검사, 기본) */
+    private volatile boolean publicCheck;
+    /** 점검 종류 (종합점검 · 기능 · 웹접근성 · 로딩속도 · SEO · 보안 · 모바일환경) */
+    private volatile ScanType type = ScanType.ALL;
+    /** 모바일환경 점검: 반응형이 아닌 사이트의 모바일 전용 주소 (없으면 null) */
+    private volatile String mobileUrl;
 
     public ScanJob(String id, String url, boolean lighthouse, int maxPages, Long siteId, String trigger) {
         this(id, url, lighthouse, maxPages, siteId, trigger, LocalDateTime.now());
@@ -65,6 +71,9 @@ public class ScanJob {
         job.issueCount = e.getIssueCount();
         job.qualityScore = e.getQualityScore();
         job.allPosts = e.isAllPosts();
+        job.publicCheck = e.isPublicCheck();
+        job.type = ScanType.from(e.getCheckType());
+        job.mobileUrl = e.getMobileUrl();
         return job;
     }
 
@@ -119,7 +128,7 @@ public class ScanJob {
             case "page" -> "단계 " + stepDone + " / " + stepTotal;
             case "discover" -> "검사할 페이지 찾는 중 · " + stepTotal + "개 찾음";
             case "scan" -> "페이지 " + stepDone + " / " + stepTotal + " 검사 완료";
-            case "lighthouse" -> "로딩 속도 · 검색 노출 측정 중 (20~60초)";
+            case "lighthouse" -> "로딩 속도 · SEO 측정 중 (20~60초)";
             default -> "";
         };
     }
@@ -152,6 +161,16 @@ public class ScanJob {
     public boolean isSiteScan() { return maxPages > 1; }
     public boolean isAllPosts() { return allPosts; }
     void setAllPosts(boolean allPosts) { this.allPosts = allPosts; }
+    public boolean isPublicCheck() { return publicCheck; }
+    void setPublicCheck(boolean publicCheck) { this.publicCheck = publicCheck; }
+    /** 검사 종류 (화면 표시용) */
+    public String getAuditLabel() { return publicCheck ? "공공기관 검사" : "일반 검사"; }
+    public ScanType getType() { return type; }
+    void setType(ScanType type) { this.type = type == null ? ScanType.ALL : type; }
+    public String getMobileUrl() { return mobileUrl; }
+    void setMobileUrl(String mobileUrl) { this.mobileUrl = mobileUrl; }
+    /** 화면 표시: 종합점검이면 검사 범위까지 (예: 종합점검 · 웹사이트 전체 점검), 나머지는 점검 이름 */
+    public String getTypeLabel() { return type == ScanType.ALL ? type.getLabel() + " · " + getScope().getLabel() : type.getLabel(); }
     /** 게시판 글 점검 방식 (화면 표시용) */
     public String getPostsLabel() { return allPosts ? "모든 게시물" : "최신 게시물 1개만"; }
     /** 검사 범위 (메인 페이지만 / 입력한 현재 페이지 / 웹사이트 전체 점검) */

@@ -19,8 +19,11 @@ function rate(score) {
   return score >= 0.9 ? 'GOOD' : score >= 0.5 ? 'NEEDS_IMPROVEMENT' : 'POOR';
 }
 
-/** @param {string} url */
-export async function runLighthouse(url) {
+/**
+ * @param {string} url
+ * @param {{ categories?: string[] }} opts  측정할 분류 (로딩속도 점검은 performance만, SEO 점검은 seo만 → 시간 단축)
+ */
+export async function runLighthouse(url, { categories = ['performance', 'seo'] } = {}) {
   // 별도 Chrome 설치 없이 Playwright가 받아 둔 Chromium을 사용한다.
   const chrome = await chromeLauncher.launch({
     chromePath: chromium.executablePath(),
@@ -30,7 +33,7 @@ export async function runLighthouse(url) {
   try {
     const result = await lighthouse(
       url,
-      { port: chrome.port, output: 'json', logLevel: 'error', onlyCategories: ['performance', 'seo'], locale: 'ko' },
+      { port: chrome.port, output: 'json', logLevel: 'error', onlyCategories: categories, locale: 'ko' },
       desktopConfig,
     );
     const lhr = result?.lhr;

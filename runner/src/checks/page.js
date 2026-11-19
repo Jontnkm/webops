@@ -122,6 +122,12 @@ export async function loadPage(page, url, { timeoutMs = 30000, scroll = true } =
     .filter((img) => img.broken)
     .map((img) => ({ ...img, reason: imageErrors.get(img.src) ?? null }));
 
+  // 보안 점검용: 페이지 응답 헤더와 서버가 심은 쿠키 (리다이렉트 끝의 최종 응답 기준)
+  const headers = response ? await response.allHeaders().catch(() => ({})) : null;
+  const setCookies = response
+    ? (await response.headersArray().catch(() => [])).filter((h) => h.name.toLowerCase() === 'set-cookie').map((h) => h.value)
+    : [];
+
   const finalUrl = page.url();
   const mixedContent = finalUrl.startsWith('https://')
     ? [...new Set([...insecureUrls, ...collected.insecureInHtml])]
@@ -139,6 +145,8 @@ export async function loadPage(page, url, { timeoutMs = 30000, scroll = true } =
     failedResources: [...failedResources].map(([u, v]) => ({ url: u, ...v })),
     failedApis: [...failedApis.values()],
     mixedContent,
+    headers,
+    setCookies,
     jsErrors: [...new Set(jsErrors)],
     consoleErrors: [...consoleErrors].map(([text, v]) => ({ text, ...v })),
   };

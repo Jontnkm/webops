@@ -16,7 +16,9 @@ import { loadPage } from './checks/page.js';
 import { checkA11y } from './checks/a11y.js';
 import { checkLinks } from './checks/links.js';
 import { runLighthouse } from './checks/lighthouse.js';
-import { checkMobile } from './checks/mobile.js';
+import { checkMobile, inspectMobile, MOBILE } from './checks/mobile.js';
+import { checkPageSecurity, checkSiteSecurity } from './checks/security.js';
+import { checkEssentials } from './checks/essentials.js';
 import { captureElements } from './checks/shots.js';
 import { buildReport, makeJobId } from './normalize.js';
 
@@ -45,6 +47,28 @@ const NUMERIC_POST_KEYS = new Set(['id', 'no', 'num', 'seq', 'idx', 'sn', 'page'
 const DISCOVER_CONCURRENCY = 5;
 
 const IMPACT_RANK = { critical: 0, serious: 1, moderate: 2, minor: 3 };
+
+// 점검 종류: all(종합점검) · function(기능) · a11y(웹접근성) · perf(로딩속도) · seo(SEO) · security(보안) · mobile(모바일환경)
+export const CHECK_TYPES = ['all', 'function', 'a11y', 'perf', 'seo', 'security', 'mobile'];
+
+/** 점검 종류마다 실행할 단계 */
+function planOf(check, opts) {
+  const is = (...types) => types.includes(check);
+  return {
+    a11y: is('all', 'a11y'),
+    links: is('all', 'function'),
+    shots: opts.shots && is('all', 'function', 'a11y', 'mobile'),
+    // 끝까지 스크롤: 늦게 뜨는 이미지·내용까지 봐야 하는 점검만
+    scroll: opts.scroll && is('all', 'function', 'a11y', 'mobile'),
+    mobileSeparate: is('all'), // PC로 연 페이지를 휴대폰으로 한 번 더
+    mobileInline: is('mobile'), // 처음부터 휴대폰 브라우저로 연다
+    security: is('all', 'security'),
+    // Lighthouse: 종합점검은 첫 페이지만(설정 시), 로딩속도·SEO 점검은 모든 페이지
+    lighthouseFirst: is('all') && opts.lighthouse,
+    lighthouseAll: is('perf', 'seo'),
+    categories: is('perf') ? ['performance'] : is('seo') ? ['seo'] : ['performance', 'seo'],
+  };
+}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /**
@@ -57,9 +81,14 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  */
 export async function scanUrl(url, options = {}) {
   const opts = {
-    lighthouse: true, maxLinks: 300, maxPages: 1, concurrency: 1, posts: 'latest', scroll: true, shots: true, timeoutMs: 30000,
+    lighthouse: true, maxLinks: 300, maxPages: 1, concurrency: 1, posts: 'latest', essentials: false, scroll: true, shots: true, timeoutMs: 30000,
+    check: 'all', mobileUrl: null,
     out: DEFAULT_OUT, onProgress: () => {}, onStep: () => {}, ...options,
   };
+  if (!CHECK_TYPES.includes(opts.check)) throw new Error(`알 수 없는 점검 종류: ${opts.check}`);
+  const plan = planOf(opts.check, opts);
+  // 모바일환경 점검: 반응형이 아니라 모바일 주소를 따로 넣었으면 그 주소부터
+  if (opts.check === 'mobile' && opts.mobileUrl) url = opts.mobileUrl;
   const maxPages = Math.min(Math.max(1, opts.maxPages), MAX_PAGES_LIMIT);
   const multi = maxPages > 1;
   const concurrency = multi ? Math.min(Math.max(1, opts.concurrency), 5) : 1;
@@ -69,20 +98,22 @@ export async function scanUrl(url, options = {}) {
   const pages = [];
   const linkCache = new Map(); // 여러 페이지에 같은 링크가 있어도 한 번만 확인
   const shotBase = { dir: path.join(opts.out, 'shots', jobId), urlPrefix: `shots/${jobId}` };
-  // 한 페이지 검사 단계 수: 열기 · 접근성 · 링크 · (캡처) · 휴대폰 · (로딩 속도)
-  const singleSteps = 4 + (opts.shots ? 1 : 0) + (opts.lighthouse ? 1 : 0);
+  // 한 페이지 검사 단계 수: 열기 · (접근성) · (링크) · (캡처) · (휴대폰) · (로딩 속도)
+  const singleSteps = 1 + (plan.a11y ? 1 : 0) + (plan.links ? 1 : 0) + (plan.shots ? 1 : 0)
+    + (plan.mobileSeparate || plan.mobileInline ? 1 : 0) + (plan.lighthouseFirst || plan.lighthouseAll ? 1 : 0);
   let browserVersion = null;
   let found = { targets: [url], remaining: 0, skippedByPath: 0 };
 
   const browser = await chromium.launch();
   try {
     browserVersion = browser.version();
-    const context = await browser.newContext();
+    // 모바일환경 점검은 처음부터 휴대폰 브라우저(가로 360px, 휴대폰 브라우저 정보)로 연다
+    const context = await browser.newContext(plan.mobileInline ? MOBILE : {});
 
     // ① 웹사이트 전체 점검: 검사할 페이지를 먼저 모두 찾는다
     if (multi) {
       opts.onProgress('검사할 페이지 찾는 중');
-      found = await discoverPages(browser, url, maxPages, opts);
+      found = await discoverPages(browser, url, maxPages, { ...opts, device: plan.mobileInline ? MOBILE : {} });
       opts.onProgress(`페이지 ${found.targets.length}개를 찾았습니다. 검사를 시작합니다`);
     }
     const total = found.targets.length;
@@ -101,12 +132,12 @@ export async function scanUrl(url, options = {}) {
         opts.onProgress(`${label}${msg}${where}`);
         if (!multi) opts.onStep('page', ++step, singleSteps);
       };
-      const rp = { index, requestedUrl: target, loadError: null, page: null, a11y: null, links: null, mobile: null, lighthouse: null, shots: {} };
+      const rp = { index, requestedUrl: target, loadError: null, page: null, a11y: null, links: null, mobile: null, essentials: null, security: null, lighthouse: null, shots: {} };
       const tab = await context.newPage();
       try {
-        progress(index === 1 ? '페이지 여는 중 (PC 화면, 끝까지 스크롤)' : '페이지 여는 중');
+        progress(index === 1 ? (plan.mobileInline ? '페이지 여는 중 (휴대폰 화면)' : plan.scroll ? '페이지 여는 중 (PC 화면, 끝까지 스크롤)' : '페이지 여는 중') : '페이지 여는 중');
         try {
-          rp.page = await loadPage(tab, target, opts);
+          rp.page = await loadPage(tab, target, { ...opts, scroll: plan.scroll });
         } catch (err) {
           rp.loadError = firstLine(err.message);
         }
@@ -116,19 +147,36 @@ export async function scanUrl(url, options = {}) {
         if (!rp.page) return rp;
 
         const warn = (name) => (index > 1 ? `${name} (${shortPath(rp.page.finalUrl)})` : name);
-        progress('접근성 검사 중');
-        rp.a11y = await attempt(warn('접근성 검사'), () => checkA11y(tab), warnings);
-        progress(`링크 확인 중 (${rp.page.links.length}개)`);
-        rp.links = await attempt(warn('링크 검사'), () => checkLinks(rp.page.links, { ...opts, cache: linkCache }), warnings);
-        if (opts.shots) {
+        if (plan.a11y) {
+          progress('접근성 검사 중');
+          rp.a11y = await attempt(warn('접근성 검사'), () => checkA11y(tab), warnings);
+        }
+        // 보안: 응답 헤더 · 쿠키 (페이지를 이미 열었으므로 바로 판단)
+        if (plan.security) rp.security = checkPageSecurity(rp.page);
+        // 공공 웹사이트 필수 요소 (개인정보처리방침 · 이용약관 · 저작권 표시): 공공기관 검사(--public)일 때, 정상으로 열린 페이지만
+        if (opts.essentials && (rp.page.httpStatus == null || rp.page.httpStatus < 400)) {
+          rp.essentials = await attempt(warn('필수 요소 확인'), () => checkEssentials(tab), warnings);
+        }
+        if (plan.links) {
+          progress(`링크 확인 중 (${rp.page.links.length}개)`);
+          rp.links = await attempt(warn('링크 검사'), () => checkLinks(rp.page.links, { ...opts, cache: linkCache }), warnings);
+        }
+        if (plan.mobileInline) {
+          progress('모바일 환경 확인 중');
+          const mobileShots = plan.shots ? { ...shotBase, prefix: `p${index}-m` } : null;
+          rp.mobile = await attempt(warn('모바일 환경 확인'), () => inspectMobile(tab, { shots: mobileShots }), warnings);
+        }
+        if (plan.shots && !plan.mobileInline) {
           progress('문제 위치 화면 캡처 중');
           rp.shots = (await attempt(warn('문제 위치 캡처'), () => captureElements(tab, shotTargets(rp), {
             ...shotBase, prefix: `p${index}-`, max: index === 1 ? SHOTS_FIRST_PAGE : SHOTS_OTHER_PAGE,
           }), warnings)) ?? {};
         }
-        progress('휴대폰 화면 확인 중');
-        const mobileShots = opts.shots ? { ...shotBase, prefix: `p${index}-m` } : null;
-        rp.mobile = await attempt(warn('휴대폰 화면 확인'), () => checkMobile(browser, rp.page.finalUrl, { ...opts, shots: mobileShots }), warnings);
+        if (plan.mobileSeparate) {
+          progress('휴대폰 화면 확인 중');
+          const mobileShots = plan.shots ? { ...shotBase, prefix: `p${index}-m` } : null;
+          rp.mobile = await attempt(warn('휴대폰 화면 확인'), () => checkMobile(browser, rp.page.finalUrl, { ...opts, shots: mobileShots }), warnings);
+        }
         return rp;
       } finally {
         await tab.close().catch(() => {});
@@ -154,10 +202,36 @@ export async function scanUrl(url, options = {}) {
   pages.sort((a, b) => a.index - b.index);
 
   const first = pages[0];
-  if (first?.page && opts.lighthouse) {
-    opts.onProgress('로딩 속도 · 검색 노출 점수 측정 중 (첫 페이지, 20~60초)');
+  if (first?.page && plan.lighthouseFirst) {
+    opts.onProgress('로딩 속도 · SEO 점수 측정 중 (첫 페이지, 20~60초)');
     opts.onStep(multi ? 'lighthouse' : 'page', singleSteps, singleSteps);
-    first.lighthouse = await attempt('로딩 속도 · 검색 노출 측정', () => runLighthouse(first.page.finalUrl), warnings);
+    first.lighthouse = await attempt('로딩 속도 · SEO 측정', () => runLighthouse(first.page.finalUrl), warnings);
+  }
+  // 로딩속도 · SEO 점검: 열린 페이지 모두 Lighthouse로 측정 (한 페이지씩, 페이지마다 10~60초)
+  if (plan.lighthouseAll) {
+    const targets = pages.filter((p) => p.page && (p.page.httpStatus == null || p.page.httpStatus < 400));
+    const name = opts.check === 'perf' ? '로딩 속도' : 'SEO';
+    for (let i = 0; i < targets.length; i++) {
+      const p = targets[i];
+      opts.onProgress(`[${name} 측정 ${i + 1} / ${targets.length}] ${shortPath(p.page.finalUrl)}`);
+      if (multi) opts.onStep('lighthouse', i, targets.length);
+      else opts.onStep('page', singleSteps, singleSteps);
+      const label = `${name} 측정${p.index > 1 ? ` (${shortPath(p.page.finalUrl)})` : ''}`;
+      p.lighthouse = await attempt(label, () => runLighthouse(p.page.finalUrl, { categories: plan.categories }), warnings);
+    }
+    if (multi) opts.onStep('lighthouse', targets.length, targets.length);
+  }
+  // 보안: 사이트에 한 번 (보안 인증서 · http → https 넘김)
+  if (first?.page && plan.security) {
+    opts.onProgress('보안 인증서 확인 중');
+    first.securitySite = await attempt('보안 인증서 확인', () => checkSiteSecurity(first.page.finalUrl), warnings);
+  }
+  // 모바일환경 점검: 반응형이 아닌 것 같은데 모바일 주소를 따로 넣지 않았으면 알려 준다
+  if (plan.mobileInline && !opts.mobileUrl) {
+    const opened = pages.filter((p) => p.mobile);
+    if (opened.length && opened.filter((p) => p.mobile.notResponsive).length * 2 >= opened.length) {
+      warnings.push('반응형이 아닌 사이트로 보입니다 (모바일 화면 설정이 없음). 모바일 전용 주소가 있다면 모바일 주소를 입력해 다시 점검해 주세요');
+    }
   }
   if (multi) {
     if (found.remaining > 0) {
@@ -177,8 +251,10 @@ export async function scanUrl(url, options = {}) {
         maxPages,
         pageCount: pages.length,
         linksChecked: linkCache.size,
-        scrolled: Boolean(opts.scroll),
+        scrolled: Boolean(plan.scroll),
         remaining: found.remaining,
+        check: opts.check,
+        mobileUrl: opts.check === 'mobile' ? opts.mobileUrl ?? null : null,
       },
     },
   });
@@ -192,7 +268,8 @@ export async function scanUrl(url, options = {}) {
  * @returns {Promise<{ targets: string[], remaining: number, skippedByPath: number }>}
  */
 async function discoverPages(browser, startUrl, maxPages, opts) {
-  const context = await browser.newContext();
+  // 모바일환경 점검은 휴대폰 브라우저로 훑는다 (모바일 전용 사이트가 PC 브라우저를 PC 사이트로 보내는 경우가 있어서)
+  const context = await browser.newContext(opts.device ?? {});
   await context.route('**/*', (route) => {
     const type = route.request().resourceType();
     return ['image', 'media', 'font', 'stylesheet'].includes(type) ? route.abort() : route.continue();
