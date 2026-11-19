@@ -3,6 +3,8 @@
    색·간격은 :root 변수만 바꾸면 전체에 반영된다.
    ========================================================== */
 :root {
+  /* 최근 검사 카드 한 칸 높이: 어느 쪽이든(카드 6개 · 1개 · 검색 결과) 같은 높이로 고정 */
+  --rc-card-h: 184px;
   --c-bg: #f5f7fa;
   --c-surface: #ffffff;
   --c-text: #1b1f24;
@@ -799,17 +801,19 @@ div.check-item { cursor: default; }
 .recent h2 .small { font-weight: 400; margin-left: 6px; }
 .recent-grid {
   list-style: none; padding: 0; margin: 0 0 16px; display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: var(--rc-card-h); gap: 12px;
 }
 .recent-grid > li { display: flex; min-width: 0; position: relative; }
 /* 삭제 버튼: 카드 오른쪽 아래 (아래 줄 글자와 겹치지 않게 자리를 비워 둠) */
-.rc-delete { position: absolute; right: 10px; bottom: 9px; margin: 0; }
+.rc-delete { position: absolute; right: 12px; bottom: 12px; margin: 0; }
+/* 동그라미 안 × 아이콘 */
 .rc-delete-btn {
-  height: 28px; padding: 0 10px; border-radius: 6px; border: 1px solid transparent; background: none;
-  font: inherit; font-size: 12px; font-weight: 600; color: var(--c-text-2); cursor: pointer;
+  display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--c-border); background: #fff; color: #7a8696; cursor: pointer;
+  transition: color .15s, border-color .15s, background-color .15s;
 }
-.rc-delete-btn:hover, .rc-delete-btn:focus-visible { color: var(--c-critical); border-color: #f2c4bf; background: #fdecea; }
-.recent-card .rc-foot { padding-right: 48px; }
+.rc-delete-btn:hover, .rc-delete-btn:focus-visible { color: #fff; border-color: var(--c-critical); background: var(--c-critical); }
+.recent-card .rc-foot { padding-right: 32px; }
 .recent-card {
   flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 14px;
   background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius);
@@ -836,11 +840,14 @@ div.check-item { cursor: default; }
 .grade-text-good strong { color: #146c3b; }
 .grade-text-mid strong { color: #7a4f00; }
 .grade-text-bad strong { color: var(--c-critical); }
-.rc-foot { margin-top: auto; display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--c-text-2); }
-.rc-tags { display: flex; gap: 4px; flex-wrap: wrap; }
-.rc-tag { font-weight: 600; padding: 1px 8px; border-radius: 999px; background: #eef1f5; white-space: nowrap; }
+/* 날짜 · 점검 종류 뱃지는 늘 한 줄 (좁으면 뱃지 글자를 … 로 줄임, 전체 이름은 title) */
+.rc-foot { margin-top: auto; display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: nowrap; min-height: 24px; font-size: 12px; color: var(--c-text-2); }
+.rc-time { flex: none; white-space: nowrap; }
+.rc-tags { display: flex; gap: 4px; flex-wrap: nowrap; min-width: 0; }
+.rc-tag { min-width: 0; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: #eef1f5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-tags .tag-scheduled { flex: none; white-space: nowrap; }
 @media (max-width: 1000px) { .recent-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 560px) { .recent-grid { grid-template-columns: 1fr; grid-auto-rows: auto; } }
+@media (max-width: 560px) { .recent-grid { grid-template-columns: 1fr; } }
 
 /* 페이지 번호 */
 .pager { display: flex; justify-content: center; align-items: center; gap: 4px; flex-wrap: wrap; margin: 0 0 16px; }
@@ -1107,7 +1114,7 @@ button.kb-row:focus-visible { outline: 3px solid #7aa7ec; outline-offset: -3px; 
 
 /* ---------- 첫 화면 좌우 분할: 왼쪽 입력 · 오른쪽 최근 검사 ----------
    처음: 왼쪽만 가운데 (오른쪽 폭 0). '최근 검사 기록'을 누르면(.is-split) 왼쪽 폭이 줄며 왼쪽으로 밀리고,
-   오른쪽은 폭이 생긴 뒤 서서히 나타남. 좁은 화면(1000px 이하)은 위아래로 쌓는다. */
+   오른쪽은 폭이 생긴 뒤 서서히 나타남. 좁은 화면(1100px 이하)은 위아래로 쌓는다. */
 main.container.home { max-width: 1480px; display: flex; justify-content: center; align-items: flex-start; }
 .home-left { flex: 0 1 1040px; min-width: 0; transition: flex-basis .5s cubic-bezier(.4, 0, .2, 1); }
 .home-right {
@@ -1145,7 +1152,7 @@ main.container.home { max-width: 1480px; display: flex; justify-content: center;
 .recent-toggle:hover { border-color: var(--c-primary); }
 .recent-toggle[aria-expanded="true"] { border-color: var(--c-primary); background: #f1f6fe; color: var(--c-primary); }
 
-@media (max-width: 1000px) {
+@media (max-width: 1100px) {
   main.container.home { display: block; }
   .home-right { opacity: 0; visibility: hidden; height: 0; padding: 0; }
   .home.is-split .home-right { height: auto; padding: 8px 0 0; opacity: 1; visibility: visible; transition: opacity .35s ease; }
@@ -1190,9 +1197,9 @@ main.container.home { max-width: 1480px; display: flex; justify-content: center;
 .rs-btn:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; }
 .recent-empty { margin: 4px 0 16px; padding: 24px 16px; border: 1px dashed var(--c-border); border-radius: 10px; text-align: center; color: var(--c-text-2); font-size: 14px; }
 
-/* 좌우 분할일 때 좌우 높이 맞춤 (1001px 이상): 두 영역을 같은 높이로 늘리고, 짧은 쪽이 늘어난 높이를 나눠 가진다
+/* 좌우 분할일 때 좌우 높이 맞춤 (1101px 이상): 두 영역을 같은 높이로 늘리고, 짧은 쪽이 늘어난 높이를 나눠 가진다
    왼쪽: 점검 종류 타일·종류 설명 상자(검사 범위 카드)가 커짐 / 오른쪽: 최근 검사 카드가 커짐 */
-@media (min-width: 1001px) {
+@media (min-width: 1101px) {
   main.container.home.is-split { align-items: stretch; padding-bottom: 40px; }
   .home.is-split .home-left { display: flex; flex-direction: column; margin-bottom: 0; }
   .home.is-split .home-right .recent > :last-child { margin-bottom: 0; }
@@ -1204,7 +1211,10 @@ main.container.home { max-width: 1480px; display: flex; justify-content: center;
   .home.is-split .scope-option { flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 8px; padding: 14px; }
   .home.is-split .home-right { display: flex; flex-direction: column; }
   .home.is-split .home-right > .recent { flex: 1 1 auto; display: flex; flex-direction: column; }
-  .home.is-split .home-right .recent-grid { flex: 1 1 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* 한 쪽 6개 자리(2칸 × 3줄)를 늘 잡아 둠: 마지막 쪽·검색 결과처럼 카드가 적어도 카드 크기는 그대로 */
+  .home.is-split .home-right .recent-grid {
+    flex: none; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, var(--rc-card-h)); grid-auto-rows: var(--rc-card-h);
+  }
 }
 /* 넓은 화면(1281px 이상): 늘어난 높이를 간격 · 점검 종류 타일 · 검사 범위 카드(세로 배치)에 고르게 나눔 */
 @media (min-width: 1281px) {
@@ -1229,3 +1239,12 @@ main.container.home { max-width: 1480px; display: flex; justify-content: center;
 
 /* 카드 제목·설명은 단어 단위로 줄바꿈 */
 .scope-option strong, .scope-desc { word-break: keep-all; overflow-wrap: anywhere; }
+
+/* 1101~1280px 분할: 오른쪽 카드가 좁아 날짜·뱃지 한 줄이 빠듯함 → 좌우 비율 52:48, 카드 여백 줄임, 날짜의 연도 숨김 */
+@media (min-width: 1101px) and (max-width: 1280px) {
+  .home.is-split .home-left { flex-basis: 52%; }
+  .home.is-split .home-right { flex-basis: 48%; padding-left: 20px; }
+  .home.is-split .recent-card { padding: 12px; }
+  .home.is-split .rc-delete { right: 10px; bottom: 10px; }
+  .home.is-split .rc-year { display: none; }
+}

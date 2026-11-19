@@ -249,9 +249,9 @@
             </span>
           </span>
           <span class="rc-foot">
-            <span class="rc-time" th:text="${#temporals.format(j.createdAt, 'yyyy-MM-dd HH:mm')}">2026-11-17 14:20</span>
+            <span class="rc-time" th:attr="title=${#temporals.format(j.createdAt, 'yyyy-MM-dd HH:mm')}"><span class="rc-year" th:text="${#temporals.format(j.createdAt, 'yy.')}">26.</span><th:block th:text="${#temporals.format(j.createdAt, 'MM.dd HH:mm')}">11.17 14:20</th:block></span>
             <span class="rc-tags">
-              <span class="rc-tag" th:text="${j.type.name() == 'ALL'} ? (${j.siteScan} ? '종합 · 전체 점검' : '종합 · ' + ${j.scope.label}) : ${j.type.label}">종합점검</span>
+              <span class="rc-tag" th:title="${j.type.name() == 'ALL'} ? (${j.siteScan} ? '종합 · 전체 점검' : '종합 · ' + ${j.scope.label}) : ${j.type.label}" th:text="${j.type.name() == 'ALL'} ? (${j.siteScan} ? '종합 · 전체 점검' : '종합 · ' + ${j.scope.label}) : ${j.type.label}">종합점검</span>
               <span class="tag-scheduled" th:if="${j.scheduled}">정기</span>
             </span>
           </span>
@@ -263,7 +263,7 @@
           <input type="hidden" name="page" th:value="${recentPage}">
           <input type="hidden" name="q" th:value="${recentQuery}">
           <button type="submit" class="rc-delete-btn"
-                  th:attr="aria-label=${c.host} + ' ' + ${#temporals.format(j.createdAt, 'MM월 dd일 HH:mm')} + ' 검사 기록 삭제'">삭제</button>
+                  th:attr="aria-label=${c.host} + ' ' + ${#temporals.format(j.createdAt, 'MM월 dd일 HH:mm')} + ' 검사 기록 삭제'" title="삭제"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </form>
       </li>
     </ul>
